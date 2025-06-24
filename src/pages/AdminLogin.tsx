@@ -13,7 +13,7 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, loading, user, isAdmin } = useAuth();
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('phone');
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [credentials, setCredentials] = useState({
     email: "",
     phone: "",
@@ -67,8 +67,11 @@ const AdminLogin = () => {
       // Clean up existing state
       cleanupAuthState();
       
-      // For login, use email regardless of method since Supabase requires email
-      const loginEmail = loginMethod === 'phone' ? `${credentials.phone}@barbershop.com` : credentials.email;
+      // Use real email or create virtual one for phone
+      const loginEmail = loginMethod === 'phone' 
+        ? `phone-${credentials.phone.replace(/\D/g, '')}@barbershop.internal`
+        : credentials.email;
+      
       const { data, error } = await signIn(loginEmail, credentials.password);
       
       if (error) {
@@ -194,7 +197,7 @@ const AdminLogin = () => {
           
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm mb-2">Para criar conta de admin:</p>
-            <p className="text-gray-300 text-xs">Cadastre-se com telefone: (11) 99999-0000</p>
+            <p className="text-gray-300 text-xs">Email: rodolfopironato@yahoo.com ou Telefone: (11) 99999-0000</p>
           </div>
           
           <div className="mt-4 text-center">

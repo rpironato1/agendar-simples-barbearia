@@ -53,8 +53,11 @@ const UserLogin = () => {
       cleanupAuthState();
       
       if (isLogin) {
-        // For login, use email regardless of method since Supabase requires email
-        const loginEmail = loginMethod === 'phone' ? `${credentials.phone}@barbershop.com` : credentials.email;
+        // For login, use the actual email or create a virtual one for phone
+        const loginEmail = loginMethod === 'phone' 
+          ? `phone-${credentials.phone.replace(/\D/g, '')}@barbershop.internal` 
+          : credentials.email;
+        
         const { data, error } = await signIn(loginEmail, credentials.password);
         
         if (error) {
@@ -77,9 +80,13 @@ const UserLogin = () => {
           window.location.href = "/user-dashboard";
         }
       } else {
-        // For signup, create email from phone if phone method is used
-        const signupEmail = loginMethod === 'phone' ? `${credentials.phone}@barbershop.com` : credentials.email;
-        const { data, error } = await signUp(signupEmail, credentials.password, credentials.name, credentials.phone || credentials.email);
+        // For signup, use real email or create virtual one
+        const signupEmail = loginMethod === 'phone' 
+          ? `phone-${credentials.phone.replace(/\D/g, '')}@barbershop.internal`
+          : credentials.email;
+        
+        const phoneOrEmail = loginMethod === 'phone' ? credentials.phone : credentials.email;
+        const { data, error } = await signUp(signupEmail, credentials.password, credentials.name, phoneOrEmail);
         
         if (error) {
           toast({

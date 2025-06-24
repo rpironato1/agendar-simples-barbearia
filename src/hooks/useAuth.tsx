@@ -22,7 +22,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = profile?.phone === '(11) 99999-0000';
+  // Admin check now includes both phone and email
+  const isAdmin = profile?.phone === '(11) 99999-0000' || profile?.email === 'rodolfopironato@yahoo.com';
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -90,7 +91,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { data, error };
   };
 
-  const signUp = async (email: string, password: string, name: string, phone: string) => {
+  const signUp = async (email: string, password: string, name: string, phoneOrEmail: string) => {
     try {
       // Clean up any existing auth state
       await supabase.auth.signOut();
@@ -100,6 +101,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const redirectUrl = `${window.location.origin}/`;
     
+    // Determine if phoneOrEmail is a phone number or email
+    const isPhone = phoneOrEmail.includes('(') && phoneOrEmail.includes(')');
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -107,21 +111,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         emailRedirectTo: redirectUrl,
         data: {
           name,
-          phone,
+          phone: isPhone ? phoneOrEmail : null,
+          email: !isPhone ? phoneOrEmail : null,
           email_confirm: false // Skip email confirmation
         }
       }
     });
 
     if (data.user && !error) {
-      // Create profile
+      // Create profile with appropriate data
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
           {
             id: data.user.id,
             name,
-            phone,
+            phone: isPhone ? phoneOrEmail : null,
+            email: !isPhone ? phoneOrEmail : null,
           },
         ]);
 
@@ -129,19 +135,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Error creating profile:', profileError);
       }
 
-      // For phone-based signups, confirm the user immediately
-      if (email.includes('@barbershop.com')) {
-        try {
-          const { error: confirmError } = await supabase.auth.admin.updateUserById(
-            data.user.id,
-            { email_confirm: true }
-          );
-          if (confirmError) {
-            console.log('Could not auto-confirm user:', confirmError);
-          }
-        } catch (confirmError) {
+      // Auto-confirm users to bypass email verification
+      try {
+        const { error: confirmError } = await supabase.auth.admin.updateUserById(
+          data.user.id,
+          { email_confirm: true }
+        );
+        if (confirmError) {
           console.log('Could not auto-confirm user:', confirmError);
         }
+      } catch (confirmError) {
+        console.log('Could not auto-confirm user:', confirmError);
       }
     }
 
