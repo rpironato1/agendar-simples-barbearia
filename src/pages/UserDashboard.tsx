@@ -6,47 +6,111 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, DollarSign, History, Phone, MapPin, Star, LogOut, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
+  const { user, signOut } = useAuth();
 
-  // Mock data - em produção viria do backend
-  const appointments = [
-    { id: 1, service: "Corte Clássico", date: "2024-01-15", time: "14:30", status: "Concluído", price: 35, barber: "João Silva" },
-    { id: 2, service: "Barba Completa", date: "2024-01-20", time: "16:00", status: "Concluído", price: 25, barber: "Pedro Santos" },
-    { id: 3, service: "Combo Premium", date: "2024-01-25", time: "15:00", status: "Agendado", price: 55, barber: "João Silva" },
-  ];
+  // Fetch user appointments
+  const { data: appointments = [] } = useQuery({
+    queryKey: ['user-appointments', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // First try to find client by email or phone from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('phone, email')
+        .eq('id', user.id)
+        .single();
 
-  const promotions = [
-    { id: 1, title: "Desconto de 20% na primeira visita", description: "Válido até 31/01/2024", discount: "20%" },
-    { id: 2, title: "Combo Especial - Corte + Barba", description: "Por apenas R$ 45,00", discount: "R$ 10 OFF" },
-    { id: 3, title: "Indique um amigo e ganhe 15% de desconto", description: "Válido por 30 dias", discount: "15%" },
-  ];
+      let clientId = null;
+      
+      // Try to find client by email
+      if (user.email) {
+        const { data: clientByEmail } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('phone', user.email)
+          .single();
+        
+        if (clientByEmail) clientId = clientByEmail.id;
+      }
+      
+      // Try to find client by phone from profile
+      if (!clientId && profile?.phone) {
+        const { data: clientByPhone } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('phone', profile.phone)
+          .single();
+        
+        if (clientByPhone) clientId = clientByPhone.id;
+      }
 
-  const totalSpent = appointments.filter(a => a.status === "Concluído").reduce((sum, a) => sum + a.price, 0);
+      if (!clientId) return [];
 
-  useEffect(() => {
-    const userData = localStorage.getItem("userAuth");
-    if (!userData) {
-      navigate("/user-login");
-      return;
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          services (name, price, duration),
+          barbers (name)
+        `)
+        .eq('client_id', clientId)
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return [];
+      }
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  // Fetch promotions
+  const { data: promotions = [] } = useQuery({
+    queryKey: ['promotions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching promotions:', error);
+        return [];
+      }
+      return data;
     }
-    setUser(JSON.parse(userData));
-  }, [navigate]);
+  });
 
-  const handleLogout = () => {
-    localStorage.removeItem("userAuth");
-    toast({
-      title: "Logout realizado",
-      description: "Até a próxima!",
-    });
-    navigate("/");
+  const totalSpent = appointments
+    .filter(a => a.status === "completed" && a.services?.price)
+    .reduce((sum, a) => sum + Number(a.services.price), 0);
+
+  const completedAppointments = appointments.filter(a => a.status === "completed");
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate("/");
+    }
   };
 
-  if (!user) return null;
+  if (!user) {
+    navigate("/user-login");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -56,7 +120,7 @@ const UserDashboard = () => {
           <div className="flex justify-between items-center py-4">
             <h1 className="text-2xl font-bold text-white">Minha Área - Elite Barber</h1>
             <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Olá, {user.name.split(' ')[0]}!</span>
+              <span className="text-gray-300">Olá, {user.email}!</span>
               <Button 
                 onClick={handleLogout}
                 variant="outline"
@@ -92,7 +156,7 @@ const UserDashboard = () => {
                 <DollarSign className="h-8 w-8 text-green-400" />
                 <div className="ml-4">
                   <p className="text-sm text-gray-400">Total Gasto</p>
-                  <p className="text-2xl font-bold text-white">R$ {totalSpent}</p>
+                  <p className="text-2xl font-bold text-white">R$ {totalSpent.toFixed(2)}</p>
                 </div>
               </div>
             </CardContent>
@@ -104,7 +168,7 @@ const UserDashboard = () => {
                 <History className="h-8 w-8 text-blue-400" />
                 <div className="ml-4">
                   <p className="text-sm text-gray-400">Concluídos</p>
-                  <p className="text-2xl font-bold text-white">{appointments.filter(a => a.status === "Concluído").length}</p>
+                  <p className="text-2xl font-bold text-white">{completedAppointments.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -139,30 +203,56 @@ const UserDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {appointments.map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="text-white font-semibold">{appointment.service}</h3>
-                        <p className="text-gray-400">Barbeiro: {appointment.barber}</p>
-                        <p className="text-gray-400">{appointment.date} às {appointment.time}</p>
-                      </div>
-                      <div className="text-right">
-                        <Badge className={appointment.status === "Concluído" ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400"}>
-                          {appointment.status}
-                        </Badge>
-                        <p className="text-white font-bold mt-1">R$ {appointment.price}</p>
-                      </div>
+                  {appointments.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">Você ainda não tem agendamentos.</p>
+                      <Button 
+                        onClick={() => navigate("/booking")}
+                        className="mt-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
+                      >
+                        Fazer Primeiro Agendamento
+                      </Button>
                     </div>
-                  ))}
+                  ) : (
+                    appointments.map((appointment) => (
+                      <div key={appointment.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                        <div className="flex-1">
+                          <h3 className="text-white font-semibold">{appointment.services?.name || 'Serviço'}</h3>
+                          <p className="text-gray-400">Barbeiro: {appointment.barbers?.name || 'Qualquer barbeiro'}</p>
+                          <p className="text-gray-400">
+                            {new Date(appointment.appointment_date).toLocaleDateString("pt-BR")} às {appointment.appointment_time}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <Badge className={
+                            appointment.status === "completed" ? "bg-green-500/20 text-green-400" : 
+                            appointment.status === "confirmed" ? "bg-blue-500/20 text-blue-400" :
+                            appointment.status === "cancelled" ? "bg-red-500/20 text-red-400" :
+                            "bg-yellow-500/20 text-yellow-400"
+                          }>
+                            {appointment.status === "completed" ? "Concluído" :
+                             appointment.status === "confirmed" ? "Confirmado" :
+                             appointment.status === "cancelled" ? "Cancelado" :
+                             "Agendado"}
+                          </Badge>
+                          <p className="text-white font-bold mt-1">
+                            R$ {appointment.services?.price || appointment.price || '0'}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-                <div className="mt-6">
-                  <Button 
-                    onClick={() => navigate("/booking")}
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
-                  >
-                    Novo Agendamento
-                  </Button>
-                </div>
+                {appointments.length > 0 && (
+                  <div className="mt-6">
+                    <Button 
+                      onClick={() => navigate("/booking")}
+                      className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
+                    >
+                      Novo Agendamento
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -174,27 +264,39 @@ const UserDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {appointments.filter(a => a.status === "Concluído").map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
-                      <div className="flex-1">
-                        <h3 className="text-white font-semibold">{appointment.service}</h3>
-                        <p className="text-gray-400">Barbeiro: {appointment.barber}</p>
-                        <p className="text-gray-400">{appointment.date}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center mb-1">
-                          {[1,2,3,4,5].map((star) => (
-                            <Star key={star} className="h-4 w-4 text-amber-400 fill-current" />
-                          ))}
-                        </div>
-                        <p className="text-white font-bold">R$ {appointment.price}</p>
-                      </div>
+                  {completedAppointments.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">Nenhum serviço concluído ainda.</p>
                     </div>
-                  ))}
+                  ) : (
+                    completedAppointments.map((appointment) => (
+                      <div key={appointment.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                        <div className="flex-1">
+                          <h3 className="text-white font-semibold">{appointment.services?.name || 'Serviço'}</h3>
+                          <p className="text-gray-400">Barbeiro: {appointment.barbers?.name || 'Barbeiro'}</p>
+                          <p className="text-gray-400">
+                            {new Date(appointment.appointment_date).toLocaleDateString("pt-BR")}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center mb-1">
+                            {[1,2,3,4,5].map((star) => (
+                              <Star key={star} className="h-4 w-4 text-amber-400 fill-current" />
+                            ))}
+                          </div>
+                          <p className="text-white font-bold">
+                            R$ {appointment.services?.price || appointment.price || '0'}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-                <div className="mt-6 p-4 bg-amber-500/10 rounded-lg">
-                  <p className="text-amber-400 font-semibold">Total investido em cuidados: R$ {totalSpent}</p>
-                </div>
+                {totalSpent > 0 && (
+                  <div className="mt-6 p-4 bg-amber-500/10 rounded-lg">
+                    <p className="text-amber-400 font-semibold">Total investido em cuidados: R$ {totalSpent.toFixed(2)}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -206,19 +308,31 @@ const UserDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4">
-                  {promotions.map((promo) => (
-                    <div key={promo.id} className="p-4 bg-gradient-to-r from-purple-500/20 to-amber-500/20 rounded-lg border border-amber-500/30">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold">{promo.title}</h3>
-                          <p className="text-gray-300">{promo.description}</p>
-                        </div>
-                        <Badge className="bg-amber-500 text-black font-bold">
-                          {promo.discount}
-                        </Badge>
-                      </div>
+                  {promotions.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-400">Nenhuma promoção ativa no momento.</p>
                     </div>
-                  ))}
+                  ) : (
+                    promotions.map((promo) => (
+                      <div key={promo.id} className="p-4 bg-gradient-to-r from-purple-500/20 to-amber-500/20 rounded-lg border border-amber-500/30">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-white font-semibold">{promo.title}</h3>
+                            <p className="text-gray-300">{promo.description}</p>
+                            {promo.valid_until && (
+                              <p className="text-gray-400 text-sm">
+                                Válido até: {new Date(promo.valid_until).toLocaleDateString("pt-BR")}
+                              </p>
+                            )}
+                          </div>
+                          <Badge className="bg-amber-500 text-black font-bold">
+                            {promo.discount_percentage ? `${promo.discount_percentage}%` : 
+                             promo.discount_amount ? `R$ ${promo.discount_amount}` : 'Desconto'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

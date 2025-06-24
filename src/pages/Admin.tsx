@@ -11,57 +11,167 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Calendar, Users, Scissors, Settings, Plus, Edit, Trash2, Phone, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-// Mock data
-const mockBookings = [
-  { id: 1, clientName: "Carlos Silva", clientPhone: "(11) 99999-1111", service: "Corte Clássico", barber: "João Santos", date: "2024-01-15", time: "10:00", status: "scheduled", price: 35 },
-  { id: 2, clientName: "Roberto Lima", clientPhone: "(11) 99999-2222", service: "Combo Premium", barber: "Carlos Silva", date: "2024-01-15", time: "14:30", status: "confirmed", price: 55 },
-  { id: 3, clientName: "Pedro Costa", clientPhone: "(11) 99999-3333", service: "Barba Completa", barber: "Roberto Lima", date: "2024-01-16", time: "09:00", status: "done", price: 25 },
-];
-
-const mockBarbers = [
-  { id: 1, name: "Carlos Silva", specialty: "Cortes clássicos", active: true, totalServices: 124 },
-  { id: 2, name: "João Santos", specialty: "Barbas e bigodes", active: true, totalServices: 98 },
-  { id: 3, name: "Roberto Lima", specialty: "Cortes modernos", active: false, totalServices: 87 },
-];
-
-const mockServices = [
-  { id: 1, name: "Corte Clássico", duration: 30, price: 35, active: true },
-  { id: 2, name: "Barba Completa", duration: 25, price: 25, active: true },
-  { id: 3, name: "Combo Premium", duration: 50, price: 55, active: true },
-  { id: 4, name: "Sobrancelha", duration: 15, price: 15, active: true },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 
 const Admin = () => {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState(mockBookings);
-  const [barbers, setBarbers] = useState(mockBarbers);
-  const [services, setServices] = useState(mockServices);
   const [isAddBarberOpen, setIsAddBarberOpen] = useState(false);
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
+  const [newBarber, setNewBarber] = useState({ name: "", phone: "" });
+  const [newService, setNewService] = useState({ name: "", duration: "", price: "" });
+
+  // Fetch appointments with related data
+  const { data: appointments = [], refetch: refetchAppointments } = useQuery({
+    queryKey: ['appointments'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          clients (name, phone),
+          services (name),
+          barbers (name)
+        `)
+        .order('appointment_date', { ascending: false })
+        .order('appointment_time', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // Fetch barbers
+  const { data: barbers = [], refetch: refetchBarbers } = useQuery({
+    queryKey: ['barbers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('barbers')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching barbers:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // Fetch services
+  const { data: services = [], refetch: refetchServices } = useQuery({
+    queryKey: ['services'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching services:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // Calculate stats
+  const todayAppointments = appointments.filter(a => 
+    a.appointment_date === new Date().toISOString().split('T')[0]
+  ).length;
+
+  const monthlyRevenue = appointments
+    .filter(a => a.status === 'completed' && a.price)
+    .reduce((sum, a) => sum + Number(a.price), 0);
+
+  const activeBarbers = barbers.filter(b => b.active).length;
+  const activeServices = services.filter(s => s.active).length;
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       scheduled: { label: "Agendado", className: "bg-blue-500/20 text-blue-400" },
       confirmed: { label: "Confirmado", className: "bg-green-500/20 text-green-400" },
-      done: { label: "Concluído", className: "bg-gray-500/20 text-gray-400" },
-      canceled: { label: "Cancelado", className: "bg-red-500/20 text-red-400" },
+      completed: { label: "Concluído", className: "bg-gray-500/20 text-gray-400" },
+      cancelled: { label: "Cancelado", className: "bg-red-500/20 text-red-400" },
     };
-    const config = statusConfig[status as keyof typeof statusConfig];
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.scheduled;
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 
-  const updateBookingStatus = (bookingId: number, newStatus: string) => {
-    setBookings(prev => prev.map(booking => 
-      booking.id === bookingId ? { ...booking, status: newStatus } : booking
-    ));
+  const updateAppointmentStatus = async (appointmentId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('appointments')
+      .update({ status: newStatus })
+      .eq('id', appointmentId);
+
+    if (error) {
+      console.error('Error updating appointment:', error);
+      toast.error("Erro ao atualizar status");
+      return;
+    }
+
     toast.success("Status atualizado com sucesso!");
+    refetchAppointments();
   };
 
   const sendWhatsApp = (phone: string, clientName: string) => {
     const message = `Olá ${clientName}! Este é um lembrete do seu agendamento na Elite Barber.`;
     const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleAddBarber = async () => {
+    if (!newBarber.name) {
+      toast.error("Nome é obrigatório");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('barbers')
+      .insert([{
+        name: newBarber.name,
+        phone: newBarber.phone || null
+      }]);
+
+    if (error) {
+      console.error('Error adding barber:', error);
+      toast.error("Erro ao adicionar barbeiro");
+      return;
+    }
+
+    toast.success("Barbeiro adicionado com sucesso!");
+    setNewBarber({ name: "", phone: "" });
+    setIsAddBarberOpen(false);
+    refetchBarbers();
+  };
+
+  const handleAddService = async () => {
+    if (!newService.name || !newService.duration || !newService.price) {
+      toast.error("Todos os campos são obrigatórios");
+      return;
+    }
+
+    const { error } = await supabase
+      .from('services')
+      .insert([{
+        name: newService.name,
+        duration: parseInt(newService.duration),
+        price: parseFloat(newService.price)
+      }]);
+
+    if (error) {
+      console.error('Error adding service:', error);
+      toast.error("Erro ao adicionar serviço");
+      return;
+    }
+
+    toast.success("Serviço adicionado com sucesso!");
+    setNewService({ name: "", duration: "", price: "" });
+    setIsAddServiceOpen(false);
+    refetchServices();
   };
 
   return (
@@ -96,8 +206,8 @@ const Admin = () => {
               <Calendar className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">8</div>
-              <p className="text-xs text-gray-400">+2 desde ontem</p>
+              <div className="text-2xl font-bold text-white">{todayAppointments}</div>
+              <p className="text-xs text-gray-400">Para hoje</p>
             </CardContent>
           </Card>
 
@@ -107,8 +217,8 @@ const Admin = () => {
               <div className="text-green-400">R$</div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">R$ 4.200</div>
-              <p className="text-xs text-gray-400">+15% desde o mês passado</p>
+              <div className="text-2xl font-bold text-white">R$ {monthlyRevenue.toFixed(2)}</div>
+              <p className="text-xs text-gray-400">Serviços concluídos</p>
             </CardContent>
           </Card>
 
@@ -118,8 +228,8 @@ const Admin = () => {
               <Users className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">3</div>
-              <p className="text-xs text-gray-400">Todos disponíveis</p>
+              <div className="text-2xl font-bold text-white">{activeBarbers}</div>
+              <p className="text-xs text-gray-400">De {barbers.length} cadastrados</p>
             </CardContent>
           </Card>
 
@@ -129,8 +239,8 @@ const Admin = () => {
               <Scissors className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-white">4</div>
-              <p className="text-xs text-gray-400">Todos disponíveis</p>
+              <div className="text-2xl font-bold text-white">{activeServices}</div>
+              <p className="text-xs text-gray-400">De {services.length} cadastrados</p>
             </CardContent>
           </Card>
         </div>
@@ -149,10 +259,6 @@ const Admin = () => {
             <TabsTrigger value="servicos" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
               <Scissors className="mr-2 h-4 w-4" />
               Serviços
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
-              <Phone className="mr-2 h-4 w-4" />
-              WhatsApp
             </TabsTrigger>
           </TabsList>
 
@@ -179,52 +285,54 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {bookings.map((booking) => (
-                      <TableRow key={booking.id} className="border-slate-700">
+                    {appointments.map((appointment) => (
+                      <TableRow key={appointment.id} className="border-slate-700">
                         <TableCell>
-                          <div className="text-white font-medium">{booking.clientName}</div>
-                          <div className="text-gray-400 text-sm">{booking.clientPhone}</div>
+                          <div className="text-white font-medium">{appointment.clients?.name || 'N/A'}</div>
+                          <div className="text-gray-400 text-sm">{appointment.clients?.phone || 'N/A'}</div>
                         </TableCell>
-                        <TableCell className="text-gray-300">{booking.service}</TableCell>
-                        <TableCell className="text-gray-300">{booking.barber}</TableCell>
+                        <TableCell className="text-gray-300">{appointment.services?.name || 'N/A'}</TableCell>
+                        <TableCell className="text-gray-300">{appointment.barbers?.name || 'Qualquer'}</TableCell>
                         <TableCell>
-                          <div className="text-gray-300">{new Date(booking.date).toLocaleDateString("pt-BR")}</div>
-                          <div className="text-gray-400 text-sm">{booking.time}</div>
+                          <div className="text-gray-300">{new Date(appointment.appointment_date).toLocaleDateString("pt-BR")}</div>
+                          <div className="text-gray-400 text-sm">{appointment.appointment_time}</div>
                         </TableCell>
-                        <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                        <TableCell className="text-green-400">R$ {booking.price}</TableCell>
+                        <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+                        <TableCell className="text-green-400">R$ {appointment.price || '0'}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            {booking.status === 'scheduled' && (
+                            {appointment.status === 'scheduled' && (
                               <Button
                                 size="sm"
-                                onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                                onClick={() => updateAppointmentStatus(appointment.id, 'confirmed')}
                                 className="bg-green-600 hover:bg-green-700 text-white"
                               >
                                 <CheckCircle className="h-3 w-3" />
                               </Button>
                             )}
-                            {booking.status === 'confirmed' && (
+                            {appointment.status === 'confirmed' && (
                               <Button
                                 size="sm"
-                                onClick={() => updateBookingStatus(booking.id, 'done')}
+                                onClick={() => updateAppointmentStatus(appointment.id, 'completed')}
                                 className="bg-blue-600 hover:bg-blue-700 text-white"
                               >
                                 <Clock className="h-3 w-3" />
                               </Button>
                             )}
+                            {appointment.clients?.phone && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => sendWhatsApp(appointment.clients.phone, appointment.clients.name)}
+                                className="border-green-500 text-green-400 hover:bg-green-500 hover:text-black"
+                              >
+                                <Phone className="h-3 w-3" />
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => sendWhatsApp(booking.clientPhone, booking.clientName)}
-                              className="border-green-500 text-green-400 hover:bg-green-500 hover:text-black"
-                            >
-                              <Phone className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateBookingStatus(booking.id, 'canceled')}
+                              onClick={() => updateAppointmentStatus(appointment.id, 'cancelled')}
                               className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
                             >
                               <XCircle className="h-3 w-3" />
@@ -266,17 +374,24 @@ const Admin = () => {
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="barber-name" className="text-white">Nome Completo</Label>
-                        <Input id="barber-name" className="bg-slate-700 border-slate-600 text-white" />
+                        <Input 
+                          id="barber-name" 
+                          value={newBarber.name}
+                          onChange={(e) => setNewBarber(prev => ({ ...prev, name: e.target.value }))}
+                          className="bg-slate-700 border-slate-600 text-white" 
+                        />
                       </div>
                       <div>
-                        <Label htmlFor="barber-specialty" className="text-white">Especialidade</Label>
-                        <Input id="barber-specialty" className="bg-slate-700 border-slate-600 text-white" />
+                        <Label htmlFor="barber-phone" className="text-white">Telefone</Label>
+                        <Input 
+                          id="barber-phone"
+                          value={newBarber.phone}
+                          onChange={(e) => setNewBarber(prev => ({ ...prev, phone: e.target.value }))}
+                          className="bg-slate-700 border-slate-600 text-white" 
+                        />
                       </div>
                       <Button 
-                        onClick={() => {
-                          toast.success("Barbeiro adicionado com sucesso!");
-                          setIsAddBarberOpen(false);
-                        }}
+                        onClick={handleAddBarber}
                         className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
                       >
                         Adicionar
@@ -295,17 +410,13 @@ const Admin = () => {
                             <div className="text-4xl">👨‍🦲</div>
                             <div>
                               <h3 className="text-white font-semibold text-lg">{barber.name}</h3>
-                              <p className="text-gray-400">{barber.specialty}</p>
-                              <p className="text-gray-500 text-sm">{barber.totalServices} serviços realizados</p>
+                              <p className="text-gray-400">{barber.phone || 'Sem telefone'}</p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-3">
                             <Badge className={barber.active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
                               {barber.active ? "Ativo" : "Inativo"}
                             </Badge>
-                            <Button size="sm" variant="outline" className="border-slate-600 text-gray-300">
-                              <Edit className="h-3 w-3" />
-                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -343,23 +454,38 @@ const Admin = () => {
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="service-name" className="text-white">Nome do Serviço</Label>
-                        <Input id="service-name" className="bg-slate-700 border-slate-600 text-white" />
+                        <Input 
+                          id="service-name"
+                          value={newService.name}
+                          onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
+                          className="bg-slate-700 border-slate-600 text-white" 
+                        />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="service-duration" className="text-white">Duração (min)</Label>
-                          <Input id="service-duration" type="number" className="bg-slate-700 border-slate-600 text-white" />
+                          <Input 
+                            id="service-duration" 
+                            type="number"
+                            value={newService.duration}
+                            onChange={(e) => setNewService(prev => ({ ...prev, duration: e.target.value }))}
+                            className="bg-slate-700 border-slate-600 text-white" 
+                          />
                         </div>
                         <div>
                           <Label htmlFor="service-price" className="text-white">Preço (R$)</Label>
-                          <Input id="service-price" type="number" className="bg-slate-700 border-slate-600 text-white" />
+                          <Input 
+                            id="service-price" 
+                            type="number" 
+                            step="0.01"
+                            value={newService.price}
+                            onChange={(e) => setNewService(prev => ({ ...prev, price: e.target.value }))}
+                            className="bg-slate-700 border-slate-600 text-white" 
+                          />
                         </div>
                       </div>
                       <Button 
-                        onClick={() => {
-                          toast.success("Serviço adicionado com sucesso!");
-                          setIsAddServiceOpen(false);
-                        }}
+                        onClick={handleAddService}
                         className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
                       >
                         Adicionar
@@ -376,6 +502,9 @@ const Admin = () => {
                         <div className="flex items-center justify-between">
                           <div>
                             <h3 className="text-white font-semibold text-lg">{service.name}</h3>
+                            {service.description && (
+                              <p className="text-gray-400 text-sm mb-2">{service.description}</p>
+                            )}
                             <div className="flex items-center space-x-4 mt-2">
                               <Badge variant="secondary" className="bg-amber-500/20 text-amber-400">
                                 <Clock className="mr-1 h-3 w-3" />
@@ -390,65 +519,12 @@ const Admin = () => {
                             <Badge className={service.active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"}>
                               {service.active ? "Ativo" : "Inativo"}
                             </Badge>
-                            <Button size="sm" variant="outline" className="border-slate-600 text-gray-300">
-                              <Edit className="h-3 w-3" />
-                            </Button>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* WhatsApp Tab */}
-          <TabsContent value="whatsapp">
-            <Card className="bg-slate-800/50 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-white">Configurações WhatsApp</CardTitle>
-                <CardDescription className="text-gray-400">
-                  Configure as mensagens automáticas do WhatsApp
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <Label htmlFor="confirm-msg" className="text-white">Mensagem de Confirmação</Label>
-                  <textarea 
-                    id="confirm-msg"
-                    className="w-full p-3 bg-slate-700 border border-slate-600 rounded-md text-white mt-2"
-                    rows={3}
-                    placeholder="Olá {cliente}! Seu agendamento foi confirmado para {data} às {hora}."
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="reminder-msg" className="text-white">Mensagem de Lembrete</Label>
-                  <textarea 
-                    id="reminder-msg"
-                    className="w-full p-3 bg-slate-700 border border-slate-600 rounded-md text-white mt-2"
-                    rows={3}
-                    placeholder="Olá {cliente}! Lembrando que você tem um agendamento amanhã às {hora}."
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="followup-msg" className="text-white">Mensagem de Follow-up</Label>
-                  <textarea 
-                    id="followup-msg"
-                    className="w-full p-3 bg-slate-700 border border-slate-600 rounded-md text-white mt-2"
-                    rows={3}
-                    placeholder="Olá {cliente}! Como foi sua experiência na Elite Barber? Aguardamos sua avaliação!"
-                  />
-                </div>
-                
-                <Button 
-                  onClick={() => toast.success("Configurações salvas com sucesso!")}
-                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
-                >
-                  Salvar Configurações
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>

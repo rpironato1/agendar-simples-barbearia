@@ -5,48 +5,71 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Clock, User, Scissors, ArrowLeft, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-
-// Mock data
-const services = [
-  { id: 1, name: "Corte Clássico", duration: 30, price: 35, description: "Corte tradicional com acabamento perfeito" },
-  { id: 2, name: "Barba Completa", duration: 25, price: 25, description: "Barba aparada e finalizada com toalha quente" },
-  { id: 3, name: "Combo Premium", duration: 50, price: 55, description: "Corte + Barba com tratamento completo" },
-  { id: 4, name: "Sobrancelha", duration: 15, price: 15, description: "Design e aparação de sobrancelhas" }
-];
-
-const barbers = [
-  { id: 1, name: "Carlos Silva", specialty: "Cortes clássicos", avatar: "👨‍🦲", rating: 4.9 },
-  { id: 2, name: "João Santos", specialty: "Barbas e bigodes", avatar: "👨‍🦱", rating: 4.8 },
-  { id: 3, name: "Roberto Lima", specialty: "Cortes modernos", avatar: "👨‍🦳", rating: 4.9 }
-];
-
-const timeSlots = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"
-];
+import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
 
 const Booking = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState(location.state?.selectedService || null);
-  const [selectedBarber, setSelectedBarber] = useState<number | null>(null);
+  const [selectedBarber, setSelectedBarber] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
 
-  const handleServiceSelect = (serviceId: number) => {
+  // Fetch services from Supabase
+  const { data: services = [] } = useQuery({
+    queryKey: ['services'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching services:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // Fetch barbers from Supabase
+  const { data: barbers = [] } = useQuery({
+    queryKey: ['barbers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('barbers')
+        .select('*')
+        .eq('active', true)
+        .order('name');
+      
+      if (error) {
+        console.error('Error fetching barbers:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  const timeSlots = [
+    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+    "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30"
+  ];
+
+  const handleServiceSelect = (serviceId: string) => {
     setSelectedService(serviceId);
     setStep(2);
   };
 
-  const handleBarberSelect = (barberId: number | null) => {
+  const handleBarberSelect = (barberId: string | null) => {
     setSelectedBarber(barberId);
     setStep(3);
   };
@@ -61,29 +84,73 @@ const Booking = () => {
     setStep(5);
   };
 
-  const handleBookingSubmit = () => {
+  const handleBookingSubmit = async () => {
     if (!clientName || !clientPhone) {
       toast.error("Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
-    const service = services.find(s => s.id === selectedService);
-    const barber = barbers.find(b => b.id === selectedBarber);
-    
-    console.log("Agendamento criado:", {
-      service: service?.name,
-      barber: barber?.name || "Qualquer barbeiro",
-      date: selectedDate?.toLocaleDateString("pt-BR"),
-      time: selectedTime,
-      client: { name: clientName, phone: clientPhone }
-    });
+    try {
+      // First, create or get client
+      let clientId;
+      const { data: existingClient } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('phone', clientPhone)
+        .single();
 
-    toast.success("Agendamento realizado com sucesso! Entraremos em contato via WhatsApp para confirmar.");
-    
-    // Simular redirecionamento após sucesso
-    setTimeout(() => {
-      navigate('/');
-    }, 2000);
+      if (existingClient) {
+        clientId = existingClient.id;
+      } else {
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert([{
+            name: clientName,
+            phone: clientPhone,
+            cpf: 'N/A', // You might want to collect this
+            accepts_whatsapp: true
+          }])
+          .select('id')
+          .single();
+
+        if (clientError) {
+          console.error('Error creating client:', clientError);
+          toast.error("Erro ao criar cliente");
+          return;
+        }
+        clientId = newClient.id;
+      }
+
+      // Create appointment
+      const selectedServiceData = services.find(s => s.id === selectedService);
+      
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .insert([{
+          client_id: clientId,
+          service_id: selectedService,
+          barber_id: selectedBarber,
+          appointment_date: selectedDate?.toISOString().split('T')[0],
+          appointment_time: selectedTime,
+          price: selectedServiceData?.price,
+          status: 'scheduled'
+        }]);
+
+      if (appointmentError) {
+        console.error('Error creating appointment:', appointmentError);
+        toast.error("Erro ao criar agendamento");
+        return;
+      }
+
+      toast.success("Agendamento realizado com sucesso! Entraremos em contato via WhatsApp para confirmar.");
+      
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
+    } catch (error) {
+      console.error('Error in booking:', error);
+      toast.error("Erro inesperado ao criar agendamento");
+    }
   };
 
   const selectedServiceData = services.find(s => s.id === selectedService);
@@ -171,7 +238,7 @@ const Booking = () => {
                   >
                     <CardContent className="p-6">
                       <h3 className="text-white font-semibold text-lg mb-2">{service.name}</h3>
-                      <p className="text-gray-400 text-sm mb-4">{service.description}</p>
+                      <p className="text-gray-400 text-sm mb-4">{service.description || "Serviço profissional"}</p>
                       <div className="flex justify-between items-center">
                         <Badge variant="secondary" className="bg-amber-500/20 text-amber-400">
                           <Clock className="mr-1 h-3 w-3" />
@@ -235,14 +302,10 @@ const Booking = () => {
                   >
                     <CardContent className="p-6">
                       <div className="flex items-center space-x-4">
-                        <div className="text-4xl">{barber.avatar}</div>
+                        <div className="text-4xl">👨‍🦲</div>
                         <div className="flex-1">
                           <h3 className="text-white font-semibold text-lg">{barber.name}</h3>
-                          <p className="text-gray-400">{barber.specialty}</p>
-                          <div className="flex items-center mt-1">
-                            <span className="text-amber-400">★</span>
-                            <span className="text-gray-300 ml-1">{barber.rating}</span>
-                          </div>
+                          <p className="text-gray-400">Barbeiro profissional</p>
                         </div>
                       </div>
                     </CardContent>
