@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,16 +12,41 @@ import { useAuth } from "@/hooks/useAuth";
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, loading } = useAuth();
+  const { signIn, loading, user, isAdmin } = useAuth();
   const [credentials, setCredentials] = useState({
     email: "",
     password: ""
   });
 
+  // Redirect if already logged in as admin
+  useEffect(() => {
+    if (user && isAdmin) {
+      navigate("/admin");
+    }
+  }, [user, isAdmin, navigate]);
+
+  const cleanupAuthState = () => {
+    // Remove all Supabase auth keys from localStorage
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    // Remove from sessionStorage if in use
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      // Clean up existing state
+      cleanupAuthState();
+      
       const { data, error } = await signIn(credentials.email, credentials.password);
       
       if (error) {
@@ -38,7 +63,8 @@ const AdminLogin = () => {
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao painel administrativo.",
         });
-        navigate("/admin");
+        // Force page reload for clean state
+        window.location.href = "/admin";
       }
     } catch (error) {
       toast({
@@ -103,8 +129,8 @@ const AdminLogin = () => {
           </form>
           
           <div className="mt-6 text-center">
-            <p className="text-gray-400 text-sm mb-2">Credenciais de teste:</p>
-            <p className="text-gray-300 text-xs">Email: admin@elitebarber.com | Senha: admin123</p>
+            <p className="text-gray-400 text-sm mb-2">Para criar conta de admin:</p>
+            <p className="text-gray-300 text-xs">Cadastre-se com telefone: (11) 99999-0000</p>
           </div>
           
           <div className="mt-4 text-center">

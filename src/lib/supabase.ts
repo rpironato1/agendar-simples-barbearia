@@ -1,37 +1,16 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = "https://dikfrwaqwbtibasxdvie.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpa2Zyd2Fxd2J0aWJhc3hkdmllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MDI0MDksImV4cCI6MjA2NjM3ODQwOX0.iOOjd_rXKeDhYAMJuuRDQRP47rhthxLG_OlkCSaXmSA";
 
-// For development/demo purposes, we'll create a mock client if env vars are missing
-let supabase;
-
-if (supabaseUrl && supabaseAnonKey) {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-} else {
-  console.warn('Supabase environment variables not found. Using mock mode.');
-  // Create a mock supabase client for development
-  supabase = {
-    auth: {
-      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-      signInWithPassword: () => Promise.resolve({ data: { user: null }, error: { message: 'Mock mode - authentication disabled' } }),
-      signUp: () => Promise.resolve({ data: { user: null }, error: { message: 'Mock mode - authentication disabled' } }),
-      signOut: () => Promise.resolve({ error: null })
-    },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: { message: 'Mock mode - database disabled' } })
-        })
-      }),
-      insert: () => Promise.resolve({ data: null, error: { message: 'Mock mode - database disabled' } })
-    })
-  };
-}
-
-export { supabase };
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
 
 // Types
 export interface Client {

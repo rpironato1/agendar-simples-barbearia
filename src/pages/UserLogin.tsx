@@ -8,11 +8,12 @@ import { Scissors, Phone, User, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 const UserLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, loading, user } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [credentials, setCredentials] = useState({
     email: "",
@@ -21,10 +22,35 @@ const UserLogin = () => {
     phone: ""
   });
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/user-dashboard");
+    }
+  }, [user, navigate]);
+
+  const cleanupAuthState = () => {
+    // Remove all Supabase auth keys from localStorage
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    // Remove from sessionStorage if in use
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
+      // Clean up existing state
+      cleanupAuthState();
+      
       if (isLogin) {
         const { data, error } = await signIn(credentials.email, credentials.password);
         
@@ -42,7 +68,8 @@ const UserLogin = () => {
             title: "Login realizado com sucesso!",
             description: `Bem-vindo!`,
           });
-          navigate("/user-dashboard");
+          // Force page reload for clean state
+          window.location.href = "/user-dashboard";
         }
       } else {
         const { data, error } = await signUp(credentials.email, credentials.password, credentials.name, credentials.phone);
@@ -59,9 +86,10 @@ const UserLogin = () => {
         if (data.user) {
           toast({
             title: "Cadastro realizado com sucesso!",
-            description: "Verifique seu email para confirmar a conta.",
+            description: "Você pode fazer login agora.",
           });
           setIsLogin(true);
+          setCredentials(prev => ({ ...prev, name: "", phone: "" }));
         }
       }
     } catch (error) {
