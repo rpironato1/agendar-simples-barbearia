@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,11 +20,9 @@ const Booking = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    cpf: "",
     service: "",
     barber: "",
     time: "",
-    accepts_whatsapp: false
   });
 
   // Buscar serviços ativos
@@ -63,13 +61,8 @@ const Booking = () => {
     }
   });
 
-  // Função para formatar telefone (apenas números)
-  const formatPhone = (value: string) => {
-    return value.replace(/\D/g, '');
-  };
-
-  // Função para formatar CPF (apenas números)
-  const formatCPF = (value: string) => {
+  // Função para limpar telefone (apenas números)
+  const cleanPhone = (value: string) => {
     return value.replace(/\D/g, '');
   };
 
@@ -81,10 +74,7 @@ const Booking = () => {
 
   const handleInputChange = (field: string, value: string) => {
     if (field === 'phone') {
-      value = formatPhone(value);
-    }
-    if (field === 'cpf') {
-      value = formatCPF(value);
+      value = cleanPhone(value);
     }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -92,99 +82,141 @@ const Booking = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedDate || !formData.name || !formData.phone || !formData.service || !formData.time) {
-      toast.error("Por favor, preencha todos os campos obrigatórios");
+    // Validações básicas
+    if (!selectedDate) {
+      toast.error("Por favor, selecione uma data");
       return;
     }
 
-    if (formData.phone.length < 10 || formData.phone.length > 11) {
-      toast.error("Telefone deve ter 10 ou 11 dígitos");
+    if (!formData.name.trim()) {
+      toast.error("Por favor, digite seu nome");
       return;
     }
 
-    if (formData.cpf && formData.cpf.length !== 11) {
-      toast.error("CPF deve ter 11 dígitos");
+    if (!formData.phone) {
+      toast.error("Por favor, digite seu telefone");
+      return;
+    }
+
+    if (formData.phone.length < 10) {
+      toast.error("Telefone deve ter pelo menos 10 dígitos");
+      return;
+    }
+
+    if (!formData.service) {
+      toast.error("Por favor, selecione um serviço");
+      return;
+    }
+
+    if (!formData.time) {
+      toast.error("Por favor, selecione um horário");
       return;
     }
 
     try {
-      // Primeiro, verificar se o cliente já existe
+      console.log('Iniciando processo de agendamento...');
+      console.log('Dados do formulário:', formData);
+
+      // Primeiro, verificar se o cliente já existe pelo telefone
       let clientId = null;
-      const { data: existingClient } = await supabase
+      
+      const { data: existingClient, error: clientSearchError } = await supabase
         .from('clients')
         .select('id')
         .eq('phone', formData.phone)
-        .single();
+        .maybeSingle();
+
+      if (clientSearchError) {
+        console.error('Erro ao buscar cliente:', clientSearchError);
+      }
 
       if (existingClient) {
+        console.log('Cliente existente encontrado:', existingClient.id);
         clientId = existingClient.id;
         
-        // Atualizar dados do cliente se necessário
-        await supabase
+        // Atualizar nome do cliente se necessário
+        const { error: updateError } = await supabase
           .from('clients')
           .update({
-            name: formData.name,
-            cpf: formData.cpf || null,
-            accepts_whatsapp: formData.accepts_whatsapp,
+            name: formData.name.trim(),
             updated_at: new Date().toISOString()
           })
           .eq('id', clientId);
+
+        if (updateError) {
+          console.error('Erro ao atualizar cliente:', updateError);
+        } else {
+          console.log('Cliente atualizado com sucesso');
+        }
       } else {
+        console.log('Criando novo cliente...');
         // Criar novo cliente
         const { data: newClient, error: clientError } = await supabase
           .from('clients')
           .insert([{
-            name: formData.name,
+            name: formData.name.trim(),
             phone: formData.phone,
-            cpf: formData.cpf || null,
-            accepts_whatsapp: formData.accepts_whatsapp
+            cpf: '',
+            accepts_whatsapp: true,
+            status: 'active'
           }])
-          .select()
+          .select('id')
           .single();
 
         if (clientError) {
-          console.error('Error creating client:', clientError);
-          toast.error("Erro ao cadastrar cliente");
+          console.error('Erro ao criar cliente:', clientError);
+          toast.error("Erro ao cadastrar cliente. Tente novamente.");
           return;
         }
 
         clientId = newClient.id;
+        console.log('Novo cliente criado:', clientId);
       }
 
-      // Buscar preço do serviço
+      // Buscar preço do serviço selecionado
       const selectedService = services.find(s => s.id === formData.service);
       const servicePrice = selectedService?.price || 0;
 
+      console.log('Criando agendamento...');
+      console.log('Cliente ID:', clientId);
+      console.log('Serviço:', formData.service);
+      console.log('Preço:', servicePrice);
+
       // Criar agendamento
-      const { error: appointmentError } = await supabase
+      const appointmentData = {
+        client_id: clientId,
+        service_id: formData.service,
+        barber_id: formData.barber || null,
+        appointment_date: format(selectedDate, 'yyyy-MM-dd'),
+        appointment_time: formData.time,
+        price: servicePrice,
+        status: 'scheduled'
+      };
+
+      console.log('Dados do agendamento:', appointmentData);
+
+      const { data: newAppointment, error: appointmentError } = await supabase
         .from('appointments')
-        .insert([{
-          client_id: clientId,
-          service_id: formData.service,
-          barber_id: formData.barber || null,
-          appointment_date: format(selectedDate, 'yyyy-MM-dd'),
-          appointment_time: formData.time,
-          price: servicePrice,
-          status: 'scheduled'
-        }]);
+        .insert([appointmentData])
+        .select()
+        .single();
 
       if (appointmentError) {
-        console.error('Error creating appointment:', appointmentError);
-        toast.error("Erro ao criar agendamento");
+        console.error('Erro ao criar agendamento:', appointmentError);
+        toast.error("Erro ao criar agendamento. Tente novamente.");
         return;
       }
 
+      console.log('Agendamento criado com sucesso:', newAppointment);
       toast.success("Agendamento criado com sucesso!");
       
       // Resetar formulário
       setFormData({
         name: "",
         phone: "",
-        cpf: "",
         service: "",
         barber: "",
         time: "",
-        accepts_whatsapp: false
       });
       setSelectedDate(new Date());
       
@@ -194,7 +226,7 @@ const Booking = () => {
       }, 2000);
 
     } catch (error) {
-      console.error('Error in booking process:', error);
+      console.error('Erro no processo de agendamento:', error);
       toast.error("Erro interno. Tente novamente.");
     }
   };
@@ -232,7 +264,7 @@ const Booking = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-white">Telefone/WhatsApp *</Label>
+                  <Label htmlFor="phone" className="text-white">Telefone *</Label>
                   <Input
                     id="phone"
                     value={formData.phone}
@@ -241,33 +273,7 @@ const Booking = () => {
                     placeholder="11999999999 (apenas números)"
                     required
                   />
-                  <p className="text-xs text-gray-400">Digite apenas números (10 ou 11 dígitos)</p>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="cpf" className="text-white">CPF (opcional)</Label>
-                  <Input
-                    id="cpf"
-                    value={formData.cpf}
-                    onChange={(e) => handleInputChange('cpf', e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    placeholder="12345678901 (apenas números)"
-                  />
-                  <p className="text-xs text-gray-400">Digite apenas números (11 dígitos)</p>
-                </div>
-                <div className="flex items-center space-x-2 pt-8">
-                  <input
-                    type="checkbox"
-                    id="whatsapp"
-                    checked={formData.accepts_whatsapp}
-                    onChange={(e) => setFormData(prev => ({ ...prev, accepts_whatsapp: e.target.checked }))}
-                    className="rounded"
-                  />
-                  <Label htmlFor="whatsapp" className="text-white text-sm">
-                    Aceito receber mensagens via WhatsApp
-                  </Label>
+                  <p className="text-xs text-gray-400">Digite apenas números (mínimo 10 dígitos)</p>
                 </div>
               </div>
 
