@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, Users, Scissors, Settings, Plus, Edit, Trash2, Phone, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Calendar, Users, Scissors, Settings, Plus, Phone, CheckCircle, XCircle, Clock, DollarSign, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import FinancialDashboard from "@/components/FinancialDashboard";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -78,14 +79,36 @@ const Admin = () => {
     }
   });
 
+  // Fetch financial transactions for revenue calculation
+  const { data: transactions = [] } = useQuery({
+    queryKey: ['financial-transactions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .eq('type', 'income');
+      
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
   // Calculate stats
   const todayAppointments = appointments.filter(a => 
     a.appointment_date === new Date().toISOString().split('T')[0]
   ).length;
 
-  const monthlyRevenue = appointments
-    .filter(a => a.status === 'completed' && a.price)
-    .reduce((sum, a) => sum + Number(a.price), 0);
+  const monthlyRevenue = transactions
+    .filter(t => {
+      const transactionDate = new Date(t.transaction_date);
+      const currentDate = new Date();
+      return transactionDate.getMonth() === currentDate.getMonth() && 
+             transactionDate.getFullYear() === currentDate.getFullYear();
+    })
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const activeBarbers = barbers.filter(b => b.active).length;
   const activeServices = services.filter(s => s.active).length;
@@ -118,8 +141,9 @@ const Admin = () => {
   };
 
   const sendWhatsApp = (phone: string, clientName: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
     const message = `Olá ${clientName}! Este é um lembrete do seu agendamento na Elite Barber.`;
-    const whatsappUrl = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -133,7 +157,7 @@ const Admin = () => {
       .from('barbers')
       .insert([{
         name: newBarber.name,
-        phone: newBarber.phone || null
+        phone: newBarber.phone.replace(/\D/g, '') || null
       }]);
 
     if (error) {
@@ -214,7 +238,7 @@ const Admin = () => {
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Receita do Mês</CardTitle>
-              <div className="text-green-400">R$</div>
+              <DollarSign className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">R$ {monthlyRevenue.toFixed(2)}</div>
@@ -251,6 +275,10 @@ const Admin = () => {
             <TabsTrigger value="agenda" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
               <Calendar className="mr-2 h-4 w-4" />
               Agenda
+            </TabsTrigger>
+            <TabsTrigger value="financeiro" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Financeiro
             </TabsTrigger>
             <TabsTrigger value="barbeiros" className="data-[state=active]:bg-amber-500 data-[state=active]:text-black">
               <Users className="mr-2 h-4 w-4" />
@@ -347,6 +375,11 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
+          {/* Financeiro Tab */}
+          <TabsContent value="financeiro">
+            <FinancialDashboard />
+          </TabsContent>
+
           {/* Barbeiros Tab */}
           <TabsContent value="barbeiros">
             <Card className="bg-slate-800/50 border-slate-700">
@@ -386,8 +419,9 @@ const Admin = () => {
                         <Input 
                           id="barber-phone"
                           value={newBarber.phone}
-                          onChange={(e) => setNewBarber(prev => ({ ...prev, phone: e.target.value }))}
+                          onChange={(e) => setNewBarber(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '') }))}
                           className="bg-slate-700 border-slate-600 text-white" 
+                          placeholder="11999999999 (apenas números)"
                         />
                       </div>
                       <Button 

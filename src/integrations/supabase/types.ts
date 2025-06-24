@@ -139,6 +139,121 @@ export type Database = {
         }
         Relationships: []
       }
+      cost_items: {
+        Row: {
+          active: boolean | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cost_records: {
+        Row: {
+          cost_item_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          purchase_date: string
+          quantity: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          cost_item_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          quantity?: number
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          cost_item_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          purchase_date?: string
+          quantity?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_records_cost_item_id_fkey"
+            columns: ["cost_item_id"]
+            isOneToOne: false
+            referencedRelation: "cost_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          appointment_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          transaction_date: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          appointment_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          transaction_date?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          transaction_date?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null

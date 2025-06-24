@@ -53,7 +53,7 @@ export interface Appointment {
   barber_id: string | null;
   appointment_date: string;
   appointment_time: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   price: number | null;
   notes: string | null;
   created_at: string;
@@ -81,4 +81,38 @@ export interface Profile {
   phone: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface FinancialTransaction {
+  id: string;
+  appointment_id: string | null;
+  amount: number;
+  transaction_date: string;
+  description: string | null;
+  type: 'income' | 'expense';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CostItem {
+  id: string;
+  name: string;
+  description: string | null;
+  unit_price: number;
+  category: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CostRecord {
+  id: string;
+  cost_item_id: string;
+  quantity: number;
+  total_amount: number;
+  purchase_date: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  cost_items?: CostItem;
 }
