@@ -22,7 +22,9 @@ const AdminLogin = () => {
 
   // Redirect if already logged in as admin
   useEffect(() => {
+    console.log('Admin check:', { user: user?.email, isAdmin });
     if (user && isAdmin) {
+      console.log('Redirecting to admin...');
       navigate("/admin");
     }
   }, [user, isAdmin, navigate]);
@@ -72,9 +74,12 @@ const AdminLogin = () => {
         ? `phone-${credentials.phone.replace(/\D/g, '')}@barbershop.internal`
         : credentials.email;
       
+      console.log('Attempting login with:', loginEmail);
+      
       const { data, error } = await signIn(loginEmail, credentials.password);
       
       if (error) {
+        console.error('Login error:', error);
         toast({
           title: "Erro no login",
           description: error.message === "Invalid login credentials" 
@@ -86,14 +91,32 @@ const AdminLogin = () => {
       }
 
       if (data.user) {
+        console.log('Login successful for user:', data.user.email);
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao painel administrativo.",
         });
-        // Force page reload for clean state
-        window.location.href = "/admin";
+        
+        // Wait a moment for auth state to update
+        setTimeout(() => {
+          // Check if user is admin before redirecting
+          const userIsAdmin = data.user.email === 'rodolfopironato@yahoo.com';
+          console.log('User is admin:', userIsAdmin);
+          
+          if (userIsAdmin) {
+            navigate("/admin");
+          } else {
+            toast({
+              title: "Acesso negado",
+              description: "Você não tem permissão para acessar o painel administrativo.",
+              variant: "destructive",
+            });
+            navigate("/");
+          }
+        }, 1000);
       }
     } catch (error) {
+      console.error('Login exception:', error);
       toast({
         title: "Erro no login",
         description: "Ocorreu um erro inesperado.",

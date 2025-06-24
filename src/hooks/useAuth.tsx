@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
@@ -22,8 +21,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Admin check now includes both phone and email
-  const isAdmin = profile?.phone === '(11) 99999-0000' || profile?.email === 'rodolfopironato@yahoo.com';
+  // Admin check - verifica tanto email quanto telefone
+  const isAdmin = user?.email === 'rodolfopironato@yahoo.com' || profile?.phone === '(11) 99999-0000' || profile?.email === 'rodolfopironato@yahoo.com';
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -113,7 +112,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           name,
           phone: isPhone ? phoneOrEmail : null,
           email: !isPhone ? phoneOrEmail : null,
-          email_confirm: false // Skip email confirmation
+          email_confirm: true // Auto-confirm to bypass email verification
         }
       }
     });
@@ -133,19 +132,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
-      }
-
-      // Auto-confirm users to bypass email verification
-      try {
-        const { error: confirmError } = await supabase.auth.admin.updateUserById(
-          data.user.id,
-          { email_confirm: true }
-        );
-        if (confirmError) {
-          console.log('Could not auto-confirm user:', confirmError);
-        }
-      } catch (confirmError) {
-        console.log('Could not auto-confirm user:', confirmError);
       }
     }
 

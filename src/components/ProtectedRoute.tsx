@@ -11,6 +11,8 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { user, isAdmin, loading } = useAuth();
 
+  console.log('ProtectedRoute check:', { user: user?.email, isAdmin, requireAdmin, loading });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -24,6 +26,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   }
 
   if (requireAdmin && !isAdmin) {
+    console.log('Access denied: not admin');
     return <Navigate to="/" replace />;
   }
 
