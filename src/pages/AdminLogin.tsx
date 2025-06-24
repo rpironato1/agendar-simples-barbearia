@@ -7,30 +7,43 @@ import { Label } from "@/components/ui/label";
 import { Scissors, Lock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn, loading } = useAuth();
   const [credentials, setCredentials] = useState({
-    username: "",
+    email: "",
     password: ""
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação simples (em produção seria com backend)
-    if (credentials.username === "admin" && credentials.password === "admin123") {
-      localStorage.setItem("adminAuth", "true");
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao painel administrativo.",
-      });
-      navigate("/admin");
-    } else {
+    try {
+      const { data, error } = await signIn(credentials.email, credentials.password);
+      
+      if (error) {
+        toast({
+          title: "Erro no login",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data.user) {
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Bem-vindo ao painel administrativo.",
+        });
+        navigate("/admin");
+      }
+    } catch (error) {
       toast({
         title: "Erro no login",
-        description: "Usuário ou senha incorretos.",
+        description: "Ocorreu um erro inesperado.",
         variant: "destructive",
       });
     }
@@ -49,15 +62,15 @@ const AdminLogin = () => {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-gray-300">Usuário</Label>
+              <Label htmlFor="email" className="text-gray-300">Email</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  id="username"
-                  type="text"
-                  placeholder="Digite seu usuário"
-                  value={credentials.username}
-                  onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                  id="email"
+                  type="email"
+                  placeholder="Digite seu email"
+                  value={credentials.email}
+                  onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
                   className="pl-10 bg-slate-700 border-slate-600 text-white"
                   required
                 />
@@ -82,15 +95,16 @@ const AdminLogin = () => {
 
             <Button 
               type="submit"
+              disabled={loading}
               className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
             >
-              Entrar no Painel Admin
+              {loading ? "Entrando..." : "Entrar no Painel Admin"}
             </Button>
           </form>
           
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm mb-2">Credenciais de teste:</p>
-            <p className="text-gray-300 text-xs">Usuário: admin | Senha: admin123</p>
+            <p className="text-gray-300 text-xs">Email: admin@elitebarber.com | Senha: admin123</p>
           </div>
           
           <div className="mt-4 text-center">
