@@ -40,6 +40,18 @@ const Index = () => {
               <a href="#servicos" className="text-gray-300 hover:text-amber-400 transition-colors">Serviços</a>
               <a href="#sobre" className="text-gray-300 hover:text-amber-400 transition-colors">Sobre</a>
               <a href="#contato" className="text-gray-300 hover:text-amber-400 transition-colors">Contato</a>
+              <button 
+                onClick={() => navigate('/booking')}
+                className="text-gray-300 hover:text-amber-400 transition-colors"
+              >
+                Agendamento
+              </button>
+              <button 
+                onClick={() => navigate('/admin')}
+                className="text-gray-300 hover:text-amber-400 transition-colors"
+              >
+                Admin
+              </button>
             </nav>
             <Button 
               onClick={() => navigate('/booking')}
