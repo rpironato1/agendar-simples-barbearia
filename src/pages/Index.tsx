@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,13 +40,13 @@ const Index = () => {
               <a href="#sobre" className="text-gray-300 hover:text-amber-400 transition-colors">Sobre</a>
               <a href="#contato" className="text-gray-300 hover:text-amber-400 transition-colors">Contato</a>
               <button 
-                onClick={() => navigate('/booking')}
+                onClick={() => navigate('/user-login')}
                 className="text-gray-300 hover:text-amber-400 transition-colors"
               >
-                Agendamento
+                Área do Cliente
               </button>
               <button 
-                onClick={() => navigate('/admin')}
+                onClick={() => navigate('/admin-login')}
                 className="text-gray-300 hover:text-amber-400 transition-colors"
               >
                 Admin
