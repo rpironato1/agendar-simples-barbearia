@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Scissors, Phone, User, Mail } from "lucide-react";
+import { Scissors, Phone, User, Mail, AtSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,11 +15,12 @@ const UserLogin = () => {
   const { toast } = useToast();
   const { signIn, signUp, loading, user } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [credentials, setCredentials] = useState({
     email: "",
+    phone: "",
     password: "",
-    name: "",
-    phone: ""
+    name: ""
   });
 
   // Redirect if already logged in
@@ -52,12 +53,16 @@ const UserLogin = () => {
       cleanupAuthState();
       
       if (isLogin) {
-        const { data, error } = await signIn(credentials.email, credentials.password);
+        // For login, use email regardless of method since Supabase requires email
+        const loginEmail = loginMethod === 'phone' ? `${credentials.phone}@barbershop.com` : credentials.email;
+        const { data, error } = await signIn(loginEmail, credentials.password);
         
         if (error) {
           toast({
             title: "Erro no login",
-            description: error.message,
+            description: error.message === "Invalid login credentials" 
+              ? "Credenciais inválidas. Verifique seu email/telefone e senha."
+              : error.message,
             variant: "destructive",
           });
           return;
@@ -72,7 +77,9 @@ const UserLogin = () => {
           window.location.href = "/user-dashboard";
         }
       } else {
-        const { data, error } = await signUp(credentials.email, credentials.password, credentials.name, credentials.phone);
+        // For signup, create email from phone if phone method is used
+        const signupEmail = loginMethod === 'phone' ? `${credentials.phone}@barbershop.com` : credentials.email;
+        const { data, error } = await signUp(signupEmail, credentials.password, credentials.name, credentials.phone || credentials.email);
         
         if (error) {
           toast({
@@ -89,7 +96,7 @@ const UserLogin = () => {
             description: "Você pode fazer login agora.",
           });
           setIsLogin(true);
-          setCredentials(prev => ({ ...prev, name: "", phone: "" }));
+          setCredentials(prev => ({ ...prev, name: "" }));
         }
       }
     } catch (error) {
@@ -99,6 +106,24 @@ const UserLogin = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const formatPhone = (value: string) => {
+    // Remove all non-numeric characters
+    const numbers = value.replace(/\D/g, '');
+    
+    // Apply mask (11) 99999-9999
+    if (numbers.length <= 11) {
+      return numbers
+        .replace(/(\d{2})(\d)/, '($1) $2')
+        .replace(/(\d{5})(\d)/, '$1-$2');
+    }
+    return value;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value);
+    setCredentials(prev => ({ ...prev, phone: formatted }));
   };
 
   return (
@@ -113,6 +138,28 @@ const UserLogin = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Login Method Toggle */}
+            <div className="flex space-x-2 mb-4">
+              <Button
+                type="button"
+                variant={loginMethod === 'email' ? 'default' : 'outline'}
+                onClick={() => setLoginMethod('email')}
+                className="flex-1 text-sm"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </Button>
+              <Button
+                type="button"
+                variant={loginMethod === 'phone' ? 'default' : 'outline'}
+                onClick={() => setLoginMethod('phone')}
+                className="flex-1 text-sm"
+              >
+                <Phone className="h-4 w-4 mr-2" />
+                Telefone
+              </Button>
+            </div>
+
             {!isLogin && (
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-gray-300">Nome Completo</Label>
@@ -131,21 +178,39 @@ const UserLogin = () => {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Digite seu email"
-                  value={credentials.email}
-                  onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white"
-                  required
-                />
+            {loginMethod === 'email' ? (
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-300">Email</Label>
+                <div className="relative">
+                  <AtSign className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Digite seu email"
+                    value={credentials.email}
+                    onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
+                    className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-gray-300">Telefone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="(11) 99999-9999"
+                    value={credentials.phone}
+                    onChange={handlePhoneChange}
+                    className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-gray-300">Senha</Label>
@@ -161,24 +226,6 @@ const UserLogin = () => {
                 />
               </div>
             </div>
-            
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-gray-300">Telefone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="(11) 99999-9999"
-                    value={credentials.phone}
-                    onChange={(e) => setCredentials(prev => ({ ...prev, phone: e.target.value }))}
-                    className="pl-10 bg-slate-700 border-slate-600 text-white"
-                    required={!isLogin}
-                  />
-                </div>
-              </div>
-            )}
 
             <Button 
               type="submit"

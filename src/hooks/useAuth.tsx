@@ -107,7 +107,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         emailRedirectTo: redirectUrl,
         data: {
           name,
-          phone
+          phone,
+          email_confirm: false // Skip email confirmation
         }
       }
     });
@@ -126,6 +127,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
+      }
+
+      // For phone-based signups, confirm the user immediately
+      if (email.includes('@barbershop.com')) {
+        try {
+          const { error: confirmError } = await supabase.auth.admin.updateUserById(
+            data.user.id,
+            { email_confirm: true }
+          );
+          if (confirmError) {
+            console.log('Could not auto-confirm user:', confirmError);
+          }
+        } catch (confirmError) {
+          console.log('Could not auto-confirm user:', confirmError);
+        }
       }
     }
 
