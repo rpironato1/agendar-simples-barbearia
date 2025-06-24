@@ -54,7 +54,9 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative py-20 lg:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent z-10"></div>
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"none\" fill-rule=\"evenodd\"%3E%3Cg fill=\"%23F59E0B\" fill-opacity=\"0.05\"%3E%3Ccircle cx=\"30\" cy=\"30\" r=\"2\"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23F59E0B' fillOpacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+        }}></div>
         
         <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -179,7 +181,7 @@ const Index = () => {
                       <Star key={i} className="h-5 w-5 text-amber-400 fill-current" />
                     ))}
                   </div>
-                  <p className="text-gray-300 mb-4 italic">"{testimonial.comment}"</p>
+                  <p className="text-gray-300 mb-4 italic">&quot;{testimonial.comment}&quot;</p>
                   <p className="text-white font-semibold">- {testimonial.name}</p>
                 </CardContent>
               </Card>
@@ -204,7 +206,10 @@ const Index = () => {
                 </div>
                 <div>
                   <h3 className="text-white font-semibold text-lg mb-2">Endereço</h3>
-                  <p className="text-gray-300">Rua das Flores, 123 - Centro<br />São Paulo, SP - 01234-567</p>
+                  <p className="text-gray-300">
+                    Rua das Flores, 123 - Centro<br />
+                    São Paulo, SP - 01234-567
+                  </p>
                 </div>
               </div>
               
