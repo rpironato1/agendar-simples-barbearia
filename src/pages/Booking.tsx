@@ -25,10 +25,13 @@ const Booking = () => {
     time: "",
   });
 
+  console.log('🚀 Booking component rendered with formData:', formData);
+
   // Buscar serviços ativos
-  const { data: services = [] } = useQuery({
+  const { data: services = [], isLoading: servicesLoading, error: servicesError } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
+      console.log('📊 Fetching services...');
       const { data, error } = await supabase
         .from('services')
         .select('*')
@@ -36,17 +39,21 @@ const Booking = () => {
         .order('name');
       
       if (error) {
-        console.error('Error fetching services:', error);
+        console.error('❌ Error fetching services:', error);
+        toast.error('Erro ao carregar serviços');
         return [];
       }
+      
+      console.log('✅ Services loaded:', data);
       return data;
     }
   });
 
   // Buscar barbeiros ativos
-  const { data: barbers = [] } = useQuery({
+  const { data: barbers = [], isLoading: barbersLoading, error: barbersError } = useQuery({
     queryKey: ['barbers'],
     queryFn: async () => {
+      console.log('💇 Fetching barbers...');
       const { data, error } = await supabase
         .from('barbers')
         .select('*')
@@ -54,16 +61,21 @@ const Booking = () => {
         .order('name');
       
       if (error) {
-        console.error('Error fetching barbers:', error);
+        console.error('❌ Error fetching barbers:', error);
+        toast.error('Erro ao carregar barbeiros');
         return [];
       }
+      
+      console.log('✅ Barbers loaded:', data);
       return data;
     }
   });
 
   // Função para limpar telefone (apenas números)
   const cleanPhone = (value: string) => {
-    return value.replace(/\D/g, '');
+    const cleaned = value.replace(/\D/g, '');
+    console.log('📱 Phone cleaned:', value, '->', cleaned);
+    return cleaned;
   };
 
   const timeSlots = [
@@ -73,114 +85,153 @@ const Booking = () => {
   ];
 
   const handleInputChange = (field: string, value: string) => {
+    console.log(`🔄 Input change - ${field}:`, value);
+    
     if (field === 'phone') {
       value = cleanPhone(value);
     }
-    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('📝 Updated formData:', newData);
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('🚀 Starting appointment booking process...');
+    console.log('📋 Form data:', formData);
+    console.log('📅 Selected date:', selectedDate);
+    
     // Validações básicas
     if (!selectedDate) {
+      console.log('❌ Validation failed: No date selected');
       toast.error("Por favor, selecione uma data");
       return;
     }
 
     if (!formData.name.trim()) {
+      console.log('❌ Validation failed: No name provided');
       toast.error("Por favor, digite seu nome");
       return;
     }
 
     if (!formData.phone) {
+      console.log('❌ Validation failed: No phone provided');
       toast.error("Por favor, digite seu telefone");
       return;
     }
 
     if (formData.phone.length < 10) {
+      console.log('❌ Validation failed: Phone too short:', formData.phone.length);
       toast.error("Telefone deve ter pelo menos 10 dígitos");
       return;
     }
 
     if (!formData.service) {
+      console.log('❌ Validation failed: No service selected');
       toast.error("Por favor, selecione um serviço");
       return;
     }
 
     if (!formData.time) {
+      console.log('❌ Validation failed: No time selected');
       toast.error("Por favor, selecione um horário");
       return;
     }
 
-    try {
-      console.log('Iniciando processo de agendamento...');
-      console.log('Dados do formulário:', formData);
+    console.log('✅ All validations passed, proceeding with booking...');
 
+    try {
       // Primeiro, verificar se o cliente já existe pelo telefone
-      let clientId = null;
+      console.log('🔍 Checking if client exists with phone:', formData.phone);
       
       const { data: existingClient, error: clientSearchError } = await supabase
         .from('clients')
-        .select('id')
+        .select('id, name')
         .eq('phone', formData.phone)
         .maybeSingle();
 
       if (clientSearchError) {
-        console.error('Erro ao buscar cliente:', clientSearchError);
+        console.error('❌ Error searching for client:', clientSearchError);
+        // Continuar mesmo com erro na busca
       }
 
+      let clientId = null;
+
       if (existingClient) {
-        console.log('Cliente existente encontrado:', existingClient.id);
+        console.log('👤 Existing client found:', existingClient);
         clientId = existingClient.id;
         
         // Atualizar nome do cliente se necessário
-        const { error: updateError } = await supabase
-          .from('clients')
-          .update({
-            name: formData.name.trim(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', clientId);
+        if (existingClient.name !== formData.name.trim()) {
+          console.log('🔄 Updating client name...');
+          const { error: updateError } = await supabase
+            .from('clients')
+            .update({
+              name: formData.name.trim(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', clientId);
 
-        if (updateError) {
-          console.error('Erro ao atualizar cliente:', updateError);
-        } else {
-          console.log('Cliente atualizado com sucesso');
+          if (updateError) {
+            console.error('❌ Error updating client:', updateError);
+          } else {
+            console.log('✅ Client name updated successfully');
+          }
         }
       } else {
-        console.log('Criando novo cliente...');
+        console.log('👤 Creating new client...');
         // Criar novo cliente
+        const newClientData = {
+          name: formData.name.trim(),
+          phone: formData.phone,
+          cpf: '', // CPF vazio como padrão
+          accepts_whatsapp: true,
+          status: 'active'
+        };
+        
+        console.log('📝 New client data:', newClientData);
+        
         const { data: newClient, error: clientError } = await supabase
           .from('clients')
-          .insert([{
-            name: formData.name.trim(),
-            phone: formData.phone,
-            cpf: '',
-            accepts_whatsapp: true,
-            status: 'active'
-          }])
+          .insert([newClientData])
           .select('id')
           .single();
 
         if (clientError) {
-          console.error('Erro ao criar cliente:', clientError);
+          console.error('❌ Error creating client:', clientError);
+          console.error('❌ Client error details:', {
+            message: clientError.message,
+            details: clientError.details,
+            hint: clientError.hint,
+            code: clientError.code
+          });
+          toast.error("Erro ao cadastrar cliente. Tente novamente.");
+          return;
+        }
+
+        if (!newClient) {
+          console.error('❌ No client data returned after insert');
           toast.error("Erro ao cadastrar cliente. Tente novamente.");
           return;
         }
 
         clientId = newClient.id;
-        console.log('Novo cliente criado:', clientId);
+        console.log('✅ New client created with ID:', clientId);
       }
 
       // Buscar preço do serviço selecionado
       const selectedService = services.find(s => s.id === formData.service);
       const servicePrice = selectedService?.price || 0;
-
-      console.log('Criando agendamento...');
-      console.log('Cliente ID:', clientId);
-      console.log('Serviço:', formData.service);
-      console.log('Preço:', servicePrice);
+      
+      console.log('💰 Service details:', {
+        selectedServiceId: formData.service,
+        selectedService,
+        servicePrice
+      });
 
       // Criar agendamento
       const appointmentData = {
@@ -193,7 +244,7 @@ const Booking = () => {
         status: 'scheduled'
       };
 
-      console.log('Dados do agendamento:', appointmentData);
+      console.log('📅 Creating appointment with data:', appointmentData);
 
       const { data: newAppointment, error: appointmentError } = await supabase
         .from('appointments')
@@ -202,15 +253,28 @@ const Booking = () => {
         .single();
 
       if (appointmentError) {
-        console.error('Erro ao criar agendamento:', appointmentError);
+        console.error('❌ Error creating appointment:', appointmentError);
+        console.error('❌ Appointment error details:', {
+          message: appointmentError.message,
+          details: appointmentError.details,
+          hint: appointmentError.hint,
+          code: appointmentError.code
+        });
         toast.error("Erro ao criar agendamento. Tente novamente.");
         return;
       }
 
-      console.log('Agendamento criado com sucesso:', newAppointment);
+      if (!newAppointment) {
+        console.error('❌ No appointment data returned after insert');
+        toast.error("Erro ao criar agendamento. Tente novamente.");
+        return;
+      }
+
+      console.log('✅ Appointment created successfully:', newAppointment);
       toast.success("Agendamento criado com sucesso!");
       
       // Resetar formulário
+      console.log('🔄 Resetting form...');
       setFormData({
         name: "",
         phone: "",
@@ -221,17 +285,34 @@ const Booking = () => {
       setSelectedDate(new Date());
       
       // Redirecionar após 2 segundos
+      console.log('🔄 Redirecting to home page...');
       setTimeout(() => {
         navigate("/");
       }, 2000);
 
     } catch (error) {
-      console.error('Erro no processo de agendamento:', error);
+      console.error('💥 Unexpected error in booking process:', error);
       toast.error("Erro interno. Tente novamente.");
     }
   };
 
   const selectedService = services.find(s => s.id === formData.service);
+
+  // Log de erros de carregamento
+  if (servicesError) {
+    console.error('❌ Services loading error:', servicesError);
+  }
+  if (barbersError) {
+    console.error('❌ Barbers loading error:', barbersError);
+  }
+
+  // Log de estados de carregamento
+  console.log('📊 Loading states:', {
+    servicesLoading,
+    barbersLoading,
+    servicesCount: services.length,
+    barbersCount: barbers.length
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -280,38 +361,46 @@ const Booking = () => {
               {/* Serviço */}
               <div className="space-y-2">
                 <Label className="text-white">Serviço *</Label>
-                <Select value={formData.service} onValueChange={(value) => handleInputChange('service', value)}>
-                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                    <SelectValue placeholder="Escolha o serviço" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-700 border-slate-600">
-                    {services.map((service) => (
-                      <SelectItem key={service.id} value={service.id} className="text-white">
-                        <div className="flex justify-between items-center w-full">
-                          <span>{service.name}</span>
-                          <span className="text-green-400 ml-4">R$ {service.price}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {servicesLoading ? (
+                  <div className="text-gray-400">Carregando serviços...</div>
+                ) : (
+                  <Select value={formData.service} onValueChange={(value) => handleInputChange('service', value)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Escolha o serviço" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      {services.map((service) => (
+                        <SelectItem key={service.id} value={service.id} className="text-white">
+                          <div className="flex justify-between items-center w-full">
+                            <span>{service.name}</span>
+                            <span className="text-green-400 ml-4">R$ {service.price}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {/* Barbeiro */}
               <div className="space-y-2">
                 <Label className="text-white">Barbeiro (opcional)</Label>
-                <Select value={formData.barber} onValueChange={(value) => handleInputChange('barber', value)}>
-                  <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                    <SelectValue placeholder="Qualquer barbeiro disponível" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-700 border-slate-600">
-                    {barbers.map((barber) => (
-                      <SelectItem key={barber.id} value={barber.id} className="text-white">
-                        {barber.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {barbersLoading ? (
+                  <div className="text-gray-400">Carregando barbeiros...</div>
+                ) : (
+                  <Select value={formData.barber} onValueChange={(value) => handleInputChange('barber', value)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                      <SelectValue placeholder="Qualquer barbeiro disponível" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-700 border-slate-600">
+                      {barbers.map((barber) => (
+                        <SelectItem key={barber.id} value={barber.id} className="text-white">
+                          {barber.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {/* Data e Hora */}
@@ -379,9 +468,10 @@ const Booking = () => {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold py-3 text-lg"
+                disabled={servicesLoading || barbersLoading}
               >
                 <DollarSign className="mr-2 h-5 w-5" />
-                Confirmar Agendamento
+                {servicesLoading || barbersLoading ? 'Carregando...' : 'Confirmar Agendamento'}
               </Button>
             </form>
           </CardContent>
