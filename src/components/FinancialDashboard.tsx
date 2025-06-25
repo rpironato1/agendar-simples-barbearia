@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,10 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, TrendingUp, TrendingDown, DollarSign, Plus, Filter, Eye } from "lucide-react";
+import { Calendar, TrendingUp, TrendingDown, DollarSign, Plus, Filter, Eye } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +18,9 @@ import { toast } from "sonner";
 const FinancialDashboard = () => {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(new Date());
   const [periodFilter, setPeriodFilter] = useState("month");
+  const [customDateStart, setCustomDateStart] = useState<Date | undefined>(undefined);
+  const [customDateEnd, setCustomDateEnd] = useState<Date | undefined>(undefined);
+  const [filterType, setFilterType] = useState<'preset' | 'custom' | 'specific'>('preset');
   const [isAddCostItemOpen, setIsAddCostItemOpen] = useState(false);
   const [isAddCostRecordOpen, setIsAddCostRecordOpen] = useState(false);
   const [newCostItem, setNewCostItem] = useState({
@@ -36,7 +36,7 @@ const FinancialDashboard = () => {
     notes: ""
   });
 
-  // Buscar transações financeiras
+  // Buscar transações financeiras com dados da tabela clients
   const { data: transactions = [], refetch: refetchTransactions } = useQuery({
     queryKey: ['financial-transactions'],
     queryFn: async () => {
@@ -45,7 +45,7 @@ const FinancialDashboard = () => {
         .select(`
           *,
           appointments (
-            clients (name),
+            clients (name, phone, cpf),
             services (name)
           )
         `)
@@ -96,38 +96,52 @@ const FinancialDashboard = () => {
     }
   });
 
-  // Calcular estatísticas financeiras
+  // ✅ Calcular estatísticas financeiras com filtros aprimorados
   const calculateStats = () => {
     const now = new Date();
     let startDate, endDate;
 
-    switch (periodFilter) {
-      case "day":
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-        break;
-      case "week":
-        startDate = startOfWeek(now);
-        endDate = endOfWeek(now);
-        break;
-      case "month":
-        startDate = startOfMonth(now);
-        endDate = endOfMonth(now);
-        break;
-      case "year":
-        startDate = startOfYear(now);
-        endDate = endOfYear(now);
-        break;
-      default:
-        startDate = startOfMonth(now);
-        endDate = endOfMonth(now);
+    // ✅ Determinar período baseado no tipo de filtro
+    if (filterType === 'specific' && dateFilter) {
+      // Data específica - filtrar apenas este dia
+      startDate = new Date(dateFilter.getFullYear(), dateFilter.getMonth(), dateFilter.getDate());
+      endDate = new Date(dateFilter.getFullYear(), dateFilter.getMonth(), dateFilter.getDate() + 1);
+    } else if (filterType === 'custom' && customDateStart && customDateEnd) {
+      // Período personalizado
+      startDate = new Date(customDateStart.getFullYear(), customDateStart.getMonth(), customDateStart.getDate());
+      endDate = new Date(customDateEnd.getFullYear(), customDateEnd.getMonth(), customDateEnd.getDate() + 1);
+    } else {
+      // Períodos predefinidos
+      switch (periodFilter) {
+        case "day":
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+          break;
+        case "week":
+          startDate = startOfWeek(now);
+          endDate = endOfWeek(now);
+          break;
+        case "month":
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+          break;
+        case "year":
+          startDate = startOfYear(now);
+          endDate = endOfYear(now);
+          break;
+        default:
+          startDate = startOfMonth(now);
+          endDate = endOfMonth(now);
+      }
     }
 
+    // ✅ Aplicar filtros às transações
     const filteredTransactions = transactions.filter(t => {
       const transactionDate = new Date(t.transaction_date);
       return transactionDate >= startDate && transactionDate < endDate;
     });
 
+    // ✅ Aplicar filtros aos custos
     const filteredCostRecords = costRecords.filter(c => {
       const purchaseDate = new Date(c.purchase_date);
       return purchaseDate >= startDate && purchaseDate < endDate;
@@ -142,10 +156,104 @@ const FinancialDashboard = () => {
 
     const profit = totalIncome - totalExpenses;
 
-    return { totalIncome, totalExpenses, profit, filteredTransactions, filteredCostRecords };
+    // ✅ Calcular dados por tipo de pagamento
+    const paymentByMethod = {
+      pix: 0,
+      cartao: 0,
+      dinheiro: 0,
+      outros: 0
+    };
+
+    filteredTransactions
+      .filter(t => t.type === 'income')
+      .forEach(t => {
+        const amount = Number(t.amount);
+        if (t.payment_method === 'pix') {
+          paymentByMethod.pix += amount;
+        } else if (t.payment_method === 'cartao') {
+          paymentByMethod.cartao += amount;
+        } else if (t.payment_method === 'dinheiro') {
+          paymentByMethod.dinheiro += amount;
+        } else {
+          paymentByMethod.outros += amount;
+        }
+      });
+
+    // ✅ Calcular média diária
+    const days = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const dailyAverage = totalIncome / days;
+
+    // ✅ Calcular transações por dia para mostrar tendências
+    const transactionsByDay = new Map();
+    filteredTransactions
+      .filter(t => t.type === 'income')
+      .forEach(t => {
+        const date = new Date(t.transaction_date).toISOString().split('T')[0];
+        transactionsByDay.set(date, (transactionsByDay.get(date) || 0) + Number(t.amount));
+      });
+
+    return { 
+      totalIncome, 
+      totalExpenses, 
+      profit, 
+      filteredTransactions,
+      filteredCostRecords,
+      paymentByMethod, 
+      dailyAverage, 
+      daysInPeriod: days,
+      transactionsByDay,
+      startDate,
+      endDate
+    };
   };
 
-  const { totalIncome, totalExpenses, profit } = calculateStats();
+  const { 
+    totalIncome, 
+    totalExpenses, 
+    profit, 
+    filteredTransactions,
+    filteredCostRecords,
+    paymentByMethod, 
+    dailyAverage, 
+    daysInPeriod,
+    transactionsByDay,
+    startDate,
+    endDate
+  } = calculateStats();
+
+  // ✅ Função para resetar filtros
+  const resetFilters = () => {
+    setFilterType('preset');
+    setPeriodFilter('month');
+    setDateFilter(undefined);
+    setCustomDateStart(undefined);
+    setCustomDateEnd(undefined);
+  };
+
+  // ✅ Função para aplicar data específica
+  const applySpecificDate = (date: Date) => {
+    setFilterType('specific');
+    setDateFilter(date);
+    setCustomDateStart(undefined);
+    setCustomDateEnd(undefined);
+  };
+
+  // ✅ Função para aplicar período personalizado
+  const applyCustomPeriod = (start: Date, end: Date) => {
+    setFilterType('custom');
+    setCustomDateStart(start);
+    setCustomDateEnd(end);
+    setDateFilter(undefined);
+  };
+
+  // ✅ Função para aplicar período predefinido
+  const applyPresetPeriod = (period: string) => {
+    setFilterType('preset');
+    setPeriodFilter(period);
+    setDateFilter(undefined);
+    setCustomDateStart(undefined);
+    setCustomDateEnd(undefined);
+  };
 
   const handleAddCostItem = async () => {
     if (!newCostItem.name || !newCostItem.unit_price) {
@@ -214,33 +322,183 @@ const FinancialDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Filtros */}
+      {/* ✅ Filtros Aprimorados */}
       <Card className="bg-slate-800/50 border-slate-700">
         <CardHeader>
-          <CardTitle className="text-white flex items-center">
-            <Filter className="mr-2 h-5 w-5" />
-            Filtros Financeiros
+          <CardTitle className="text-white flex items-center justify-between">
+            <div className="flex items-center">
+              <Filter className="mr-2 h-5 w-5" />
+              Filtros Financeiros
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetFilters}
+              className="border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-black"
+            >
+              Limpar Filtros
+            </Button>
           </CardTitle>
+          <CardDescription className="text-gray-400">
+            Personalize a visualização dos dados financeiros
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4">
-            <Select value={periodFilter} onValueChange={setPeriodFilter}>
-              <SelectTrigger className="w-48 bg-slate-700 border-slate-600 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
-                <SelectItem value="day" className="text-white">Hoje</SelectItem>
-                <SelectItem value="week" className="text-white">Esta Semana</SelectItem>
-                <SelectItem value="month" className="text-white">Este Mês</SelectItem>
-                <SelectItem value="year" className="text-white">Este Ano</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-6">
+            {/* Tipo de Filtro */}
+            <div className="space-y-3">
+              <Label className="text-white font-medium">Tipo de Filtro</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Button
+                  variant={filterType === 'preset' ? 'default' : 'outline'}
+                  onClick={() => setFilterType('preset')}
+                  className={filterType === 'preset' ? 'bg-amber-500 text-black' : 'border-slate-600 text-gray-300'}
+                >
+                  📅 Períodos Rápidos
+                </Button>
+                <Button
+                  variant={filterType === 'specific' ? 'default' : 'outline'}
+                  onClick={() => setFilterType('specific')}
+                  className={filterType === 'specific' ? 'bg-amber-500 text-black' : 'border-slate-600 text-gray-300'}
+                >
+                  📆 Data Específica
+                </Button>
+                <Button
+                  variant={filterType === 'custom' ? 'default' : 'outline'}
+                  onClick={() => setFilterType('custom')}
+                  className={filterType === 'custom' ? 'bg-amber-500 text-black' : 'border-slate-600 text-gray-300'}
+                >
+                  🗓️ Período Personalizado
+                </Button>
+              </div>
+            </div>
+
+            {/* Filtros Condicionais */}
+            {filterType === 'preset' && (
+              <div className="space-y-3">
+                <Label className="text-white font-medium">Período Predefinido</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Button
+                    variant={periodFilter === 'day' ? 'default' : 'outline'}
+                    onClick={() => applyPresetPeriod('day')}
+                    className={periodFilter === 'day' ? 'bg-green-500 text-white' : 'border-slate-600 text-gray-300'}
+                  >
+                    Hoje
+                  </Button>
+                  <Button
+                    variant={periodFilter === 'week' ? 'default' : 'outline'}
+                    onClick={() => applyPresetPeriod('week')}
+                    className={periodFilter === 'week' ? 'bg-green-500 text-white' : 'border-slate-600 text-gray-300'}
+                  >
+                    Esta Semana
+                  </Button>
+                  <Button
+                    variant={periodFilter === 'month' ? 'default' : 'outline'}
+                    onClick={() => applyPresetPeriod('month')}
+                    className={periodFilter === 'month' ? 'bg-green-500 text-white' : 'border-slate-600 text-gray-300'}
+                  >
+                    Este Mês
+                  </Button>
+                  <Button
+                    variant={periodFilter === 'year' ? 'default' : 'outline'}
+                    onClick={() => applyPresetPeriod('year')}
+                    className={periodFilter === 'year' ? 'bg-green-500 text-white' : 'border-slate-600 text-gray-300'}
+                  >
+                    Este Ano
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {filterType === 'specific' && (
+              <div className="space-y-3">
+                <Label className="text-white font-medium">Selecione uma Data</Label>
+                <Input
+                  type="date"
+                  value={dateFilter ? format(dateFilter, 'yyyy-MM-dd') : ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      applySpecificDate(new Date(e.target.value));
+                    }
+                  }}
+                  className="bg-slate-700 border-slate-600 text-white max-w-xs"
+                />
+              </div>
+            )}
+
+            {filterType === 'custom' && (
+              <div className="space-y-3">
+                <Label className="text-white font-medium">Período Personalizado</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-300 text-sm">Data Inicial</Label>
+                    <Input
+                      type="date"
+                      value={customDateStart ? format(customDateStart, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const newStart = new Date(e.target.value);
+                          setCustomDateStart(newStart);
+                          if (customDateEnd && newStart <= customDateEnd) {
+                            applyCustomPeriod(newStart, customDateEnd);
+                          }
+                        }
+                      }}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-300 text-sm">Data Final</Label>
+                    <Input
+                      type="date"
+                      value={customDateEnd ? format(customDateEnd, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const newEnd = new Date(e.target.value);
+                          setCustomDateEnd(newEnd);
+                          if (customDateStart && customDateStart <= newEnd) {
+                            applyCustomPeriod(customDateStart, newEnd);
+                          }
+                        }
+                      }}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                </div>
+                {customDateStart && customDateEnd && customDateStart > customDateEnd && (
+                  <p className="text-red-400 text-sm">⚠️ Data inicial deve ser anterior à data final</p>
+                )}
+              </div>
+            )}
+
+            {/* Resumo do Período Ativo */}
+            <div className="p-4 bg-slate-700/30 rounded-lg border border-slate-600">
+              <Label className="text-white font-medium">Período Ativo</Label>
+              <div className="mt-2 space-y-1">
+                <p className="text-amber-400 font-medium">
+                  {filterType === 'preset' && (
+                    periodFilter === 'day' ? '📅 Hoje' : 
+                    periodFilter === 'week' ? '📅 Esta Semana' :
+                    periodFilter === 'month' ? '📅 Este Mês' : '📅 Este Ano'
+                  )}
+                  {filterType === 'specific' && dateFilter && (
+                    `📆 ${format(dateFilter, "dd/MM/yyyy", { locale: ptBR })}`
+                  )}
+                  {filterType === 'custom' && customDateStart && customDateEnd && (
+                    `🗓️ ${format(customDateStart, "dd/MM/yyyy", { locale: ptBR })} até ${format(customDateEnd, "dd/MM/yyyy", { locale: ptBR })}`
+                  )}
+                </p>
+                <p className="text-gray-400 text-sm">
+                  📊 {daysInPeriod} {daysInPeriod === 1 ? 'dia' : 'dias'} analisados
+                </p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Cards de Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-400">Receitas</CardTitle>
@@ -249,9 +507,17 @@ const FinancialDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold text-green-400">R$ {totalIncome.toFixed(2)}</div>
             <p className="text-xs text-gray-400">
-              {periodFilter === 'day' ? 'Hoje' : 
-               periodFilter === 'week' ? 'Esta semana' :
-               periodFilter === 'month' ? 'Este mês' : 'Este ano'}
+              {filterType === 'preset' && (
+                periodFilter === 'day' ? 'Hoje' : 
+                periodFilter === 'week' ? 'Esta semana' :
+                periodFilter === 'month' ? 'Este mês' : 'Este ano'
+              )}
+              {filterType === 'specific' && dateFilter && (
+                format(dateFilter, "dd/MM/yyyy", { locale: ptBR })
+              )}
+              {filterType === 'custom' && customDateStart && customDateEnd && (
+                `${format(customDateStart, "dd/MM", { locale: ptBR })} - ${format(customDateEnd, "dd/MM", { locale: ptBR })}`
+              )}
             </p>
           </CardContent>
         </Card>
@@ -264,9 +530,17 @@ const FinancialDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold text-red-400">R$ {totalExpenses.toFixed(2)}</div>
             <p className="text-xs text-gray-400">
-              {periodFilter === 'day' ? 'Hoje' : 
-               periodFilter === 'week' ? 'Esta semana' :
-               periodFilter === 'month' ? 'Este mês' : 'Este ano'}
+              {filterType === 'preset' && (
+                periodFilter === 'day' ? 'Hoje' : 
+                periodFilter === 'week' ? 'Esta semana' :
+                periodFilter === 'month' ? 'Este mês' : 'Este ano'
+              )}
+              {filterType === 'specific' && dateFilter && (
+                format(dateFilter, "dd/MM/yyyy", { locale: ptBR })
+              )}
+              {filterType === 'custom' && customDateStart && customDateEnd && (
+                `${format(customDateStart, "dd/MM", { locale: ptBR })} - ${format(customDateEnd, "dd/MM", { locale: ptBR })}`
+              )}
             </p>
           </CardContent>
         </Card>
@@ -281,13 +555,107 @@ const FinancialDashboard = () => {
               R$ {profit.toFixed(2)}
             </div>
             <p className="text-xs text-gray-400">
-              {periodFilter === 'day' ? 'Hoje' : 
-               periodFilter === 'week' ? 'Esta semana' :
-               periodFilter === 'month' ? 'Este mês' : 'Este ano'}
+              {filterType === 'preset' && (
+                periodFilter === 'day' ? 'Hoje' : 
+                periodFilter === 'week' ? 'Esta semana' :
+                periodFilter === 'month' ? 'Este mês' : 'Este ano'
+              )}
+              {filterType === 'specific' && dateFilter && (
+                format(dateFilter, "dd/MM/yyyy", { locale: ptBR })
+              )}
+              {filterType === 'custom' && customDateStart && customDateEnd && (
+                `${format(customDateStart, "dd/MM", { locale: ptBR })} - ${format(customDateEnd, "dd/MM", { locale: ptBR })}`
+              )}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-400">Média Diária</CardTitle>
+            <Calendar className="h-4 w-4 text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-400">R$ {dailyAverage.toFixed(2)}</div>
+            <p className="text-xs text-gray-400">
+              Em {daysInPeriod} {daysInPeriod === 1 ? 'dia' : 'dias'}
             </p>
           </CardContent>
         </Card>
       </div>
+
+      {/* ✅ Cards de Pagamento por Método */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Receitas por Método de Pagamento</CardTitle>
+          <CardDescription className="text-gray-400">
+            Distribuição das receitas por forma de pagamento
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-400 font-medium">PIX</p>
+                  <p className="text-white text-xl font-bold">R$ {paymentByMethod.pix.toFixed(2)}</p>
+                </div>
+                <div className="bg-purple-500 p-2 rounded">
+                  <span className="text-white text-xs">📱</span>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mt-2">
+                {totalIncome > 0 ? ((paymentByMethod.pix / totalIncome) * 100).toFixed(1) : 0}% do total
+              </p>
+            </div>
+
+            <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-400 font-medium">Cartão</p>
+                  <p className="text-white text-xl font-bold">R$ {paymentByMethod.cartao.toFixed(2)}</p>
+                </div>
+                <div className="bg-blue-500 p-2 rounded">
+                  <span className="text-white text-xs">💳</span>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mt-2">
+                {totalIncome > 0 ? ((paymentByMethod.cartao / totalIncome) * 100).toFixed(1) : 0}% do total
+              </p>
+            </div>
+
+            <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-400 font-medium">Dinheiro</p>
+                  <p className="text-white text-xl font-bold">R$ {paymentByMethod.dinheiro.toFixed(2)}</p>
+                </div>
+                <div className="bg-green-500 p-2 rounded">
+                  <span className="text-white text-xs">💵</span>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mt-2">
+                {totalIncome > 0 ? ((paymentByMethod.dinheiro / totalIncome) * 100).toFixed(1) : 0}% do total
+              </p>
+            </div>
+
+            <div className="p-4 bg-gray-500/10 rounded-lg border border-gray-500/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 font-medium">Outros</p>
+                  <p className="text-white text-xl font-bold">R$ {paymentByMethod.outros.toFixed(2)}</p>
+                </div>
+                <div className="bg-gray-500 p-2 rounded">
+                  <span className="text-white text-xs">❓</span>
+                </div>
+              </div>
+              <p className="text-gray-400 text-sm mt-2">
+                {totalIncome > 0 ? ((paymentByMethod.outros / totalIncome) * 100).toFixed(1) : 0}% do total
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tabs principais */}
       <Tabs defaultValue="transactions" className="space-y-6">
@@ -323,17 +691,28 @@ const FinancialDashboard = () => {
                     <TableHead className="text-gray-400">Cliente</TableHead>
                     <TableHead className="text-gray-400">Serviço</TableHead>
                     <TableHead className="text-gray-400">Tipo</TableHead>
+                    <TableHead className="text-gray-400">Método</TableHead>
                     <TableHead className="text-gray-400">Valor</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {transactions.map((transaction) => (
-                    <TableRow key={transaction.id} className="border-slate-700">
+                  {filteredTransactions.length === 0 ? (
+                    <TableRow className="border-slate-700">
+                      <TableCell colSpan={6} className="text-center py-8">
+                        <div className="text-gray-400">
+                          <p className="text-lg">📊 Nenhuma transação encontrada</p>
+                          <p className="text-sm mt-2">Não há dados para o período selecionado</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredTransactions.map((transaction) => (
+                      <TableRow key={transaction.id} className="border-slate-700">
                       <TableCell className="text-gray-300">
                         {format(new Date(transaction.transaction_date), "dd/MM/yyyy")}
                       </TableCell>
                       <TableCell className="text-gray-300">
-                        {transaction.appointments?.clients?.name || 'N/A'}
+                        {transaction.appointments?.clients?.name || 'Cliente não identificado'}
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {transaction.appointments?.services?.name || 'N/A'}
@@ -343,11 +722,46 @@ const FinancialDashboard = () => {
                           {transaction.type === 'income' ? 'Receita' : 'Despesa'}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        {transaction.payment_method ? (
+                          <div className="flex items-center space-x-2">
+                            {transaction.payment_method === 'pix' && (
+                              <>
+                                <span className="text-purple-400">📱</span>
+                                <Badge className="bg-purple-500/20 text-purple-400">PIX</Badge>
+                              </>
+                            )}
+                            {transaction.payment_method === 'cartao' && (
+                              <>
+                                <span className="text-blue-400">💳</span>
+                                <Badge className="bg-blue-500/20 text-blue-400">Cartão</Badge>
+                              </>
+                            )}
+                            {transaction.payment_method === 'dinheiro' && (
+                              <>
+                                <span className="text-green-400">💵</span>
+                                <Badge className="bg-green-500/20 text-green-400">Dinheiro</Badge>
+                              </>
+                            )}
+                            {transaction.payment_method?.startsWith('misto') && (
+                              <>
+                                <span className="text-amber-400">🔀</span>
+                                <Badge className="bg-amber-500/20 text-amber-400">Misto</Badge>
+                              </>
+                            )}
+                            {!['pix', 'cartao', 'dinheiro'].includes(transaction.payment_method) && !transaction.payment_method?.startsWith('misto') && (
+                              <Badge className="bg-gray-500/20 text-gray-400">{transaction.payment_method}</Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <Badge className="bg-gray-500/20 text-gray-400">N/A</Badge>
+                        )}
+                      </TableCell>
                       <TableCell className="text-green-400 font-bold">
                         R$ {Number(transaction.amount).toFixed(2)}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )))}
                 </TableBody>
               </Table>
             </CardContent>
@@ -405,26 +819,12 @@ const FinancialDashboard = () => {
                     </div>
                     <div>
                       <Label className="text-white">Data da Compra</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {format(newCostRecord.purchase_date, "dd/MM/yyyy")}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-slate-800 border-slate-600">
-                          <Calendar
-                            mode="single"
-                            selected={newCostRecord.purchase_date}
-                            onSelect={(date) => setNewCostRecord(prev => ({ ...prev, purchase_date: date || new Date() }))}
-                            initialFocus
-                            className="text-white"
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <Input
+                        type="date"
+                        value={format(newCostRecord.purchase_date, 'yyyy-MM-dd')}
+                        onChange={(e) => setNewCostRecord(prev => ({ ...prev, purchase_date: new Date(e.target.value) }))}
+                        className="bg-slate-700 border-slate-600 text-white"
+                      />
                     </div>
                     <div>
                       <Label className="text-white">Observações</Label>
@@ -457,8 +857,18 @@ const FinancialDashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {costRecords.map((record) => (
-                    <TableRow key={record.id} className="border-slate-700">
+                  {filteredCostRecords.length === 0 ? (
+                    <TableRow className="border-slate-700">
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <div className="text-gray-400">
+                          <p className="text-lg">📋 Nenhum custo registrado</p>
+                          <p className="text-sm mt-2">Não há despesas para o período selecionado</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredCostRecords.map((record) => (
+                      <TableRow key={record.id} className="border-slate-700">
                       <TableCell className="text-gray-300">
                         {format(new Date(record.purchase_date), "dd/MM/yyyy")}
                       </TableCell>
@@ -475,7 +885,7 @@ const FinancialDashboard = () => {
                         R$ {Number(record.total_amount).toFixed(2)}
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )))}
                 </TableBody>
               </Table>
             </CardContent>

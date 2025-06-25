@@ -1,4 +1,3 @@
-
 // Input validation and sanitization utilities
 
 export const validateEmail = (email: string): boolean => {
@@ -14,31 +13,31 @@ export const validatePhone = (phone: string): boolean => {
 };
 
 export const validateCPF = (cpf: string): boolean => {
-  // Remove all non-digits
-  const cleaned = cpf.replace(/\D/g, '');
+  // Remove formatação
+  const cleanCPF = cpf.replace(/\D/g, '');
   
-  // CPF must have 11 digits
-  if (cleaned.length !== 11) return false;
+  // Verifica se tem 11 dígitos
+  if (cleanCPF.length !== 11) return false;
   
-  // Check for repeated digits (invalid CPFs)
-  if (/^(\d)\1{10}$/.test(cleaned)) return false;
+  // Verifica se todos os dígitos são iguais
+  if (/^(\d)\1{10}$/.test(cleanCPF)) return false;
   
-  // Validate CPF algorithm
+  // Validação dos dígitos verificadores
   let sum = 0;
   for (let i = 0; i < 9; i++) {
-    sum += parseInt(cleaned.charAt(i)) * (10 - i);
+    sum += parseInt(cleanCPF.charAt(i)) * (10 - i);
   }
   let remainder = (sum * 10) % 11;
   if (remainder === 10 || remainder === 11) remainder = 0;
-  if (remainder !== parseInt(cleaned.charAt(9))) return false;
+  if (remainder !== parseInt(cleanCPF.charAt(9))) return false;
   
   sum = 0;
   for (let i = 0; i < 10; i++) {
-    sum += parseInt(cleaned.charAt(i)) * (11 - i);
+    sum += parseInt(cleanCPF.charAt(i)) * (11 - i);
   }
   remainder = (sum * 10) % 11;
   if (remainder === 10 || remainder === 11) remainder = 0;
-  if (remainder !== parseInt(cleaned.charAt(10))) return false;
+  if (remainder !== parseInt(cleanCPF.charAt(10))) return false;
   
   return true;
 };
@@ -52,29 +51,23 @@ export const sanitizeInput = (input: string): string => {
     .trim();
 };
 
+// ✅ Nova função específica para sanitizar nomes preservando espaços
+export const sanitizeName = (name: string): string => {
+  return name
+    .replace(/[<>]/g, '') // Remove apenas caracteres perigosos
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único espaço
+    .replace(/^\s+|\s+$/g, ''); // Remove espaços apenas do início e fim
+};
+
 export const validateName = (name: string): boolean => {
-  const sanitized = sanitizeInput(name);
+  const sanitized = sanitizeName(name); // ✅ Usar função específica para nomes
   return sanitized.length >= 2 && sanitized.length <= 100 && /^[a-zA-ZÀ-ÿ\s]+$/.test(sanitized);
 };
 
-export const validatePassword = (password: string): { valid: boolean; message?: string } => {
-  if (password.length < 8) {
-    return { valid: false, message: 'Senha deve ter pelo menos 8 caracteres' };
-  }
-  
-  if (!/(?=.*[a-z])/.test(password)) {
-    return { valid: false, message: 'Senha deve conter pelo menos uma letra minúscula' };
-  }
-  
-  if (!/(?=.*[A-Z])/.test(password)) {
-    return { valid: false, message: 'Senha deve conter pelo menos uma letra maiúscula' };
-  }
-  
-  if (!/(?=.*\d)/.test(password)) {
-    return { valid: false, message: 'Senha deve conter pelo menos um número' };
-  }
-  
-  return { valid: true };
+export const validatePassword = (password: string): boolean => {
+  return password.length >= 6;
 };
 
 export const validateAppointmentDate = (date: Date): boolean => {
@@ -113,4 +106,24 @@ export const formatPhoneForDisplay = (phone: string): string => {
     return `(${cleaned.substring(0, 2)}) ${cleaned.substring(2, 6)}-${cleaned.substring(6)}`;
   }
   return phone;
+};
+
+// ✅ Função para formatar CPF
+export const formatCPF = (cpf: string): string => {
+  const cleanCPF = cpf.replace(/\D/g, '');
+  
+  if (cleanCPF.length <= 3) {
+    return cleanCPF;
+  } else if (cleanCPF.length <= 6) {
+    return cleanCPF.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+  } else if (cleanCPF.length <= 9) {
+    return cleanCPF.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+  } else {
+    return cleanCPF.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+  }
+};
+
+// ✅ Função para sanitizar CPF (apenas números)
+export const sanitizeCPF = (cpf: string): string => {
+  return cpf.replace(/\D/g, '').slice(0, 11);
 };

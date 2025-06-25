@@ -1,15 +1,14 @@
-
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, Profile } from '@/lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  profile: any | null;
+  profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string, name: string, phone: string) => Promise<any>;
+  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
+  signUp: (email: string, password: string, name: string, phone: string) => Promise<{ data: any; error: any }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   userRole: string | null;
@@ -20,7 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -195,19 +194,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     if (data.user && !error) {
-      // Create profile with appropriate data
+      // Create profile for auth relationship
       const { error: profileError } = await supabase
         .from('profiles')
         .insert([
           {
             id: data.user.id,
             name: name.trim(),
-            phone: isPhone ? phoneOrEmail : null,
+            phone: phoneOrEmail, // Sempre salvar o telefone
           },
         ]);
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
+      }
+
+      // ✅ SALVAR NA TABELA CLIENTS (principal)
+      // Verificar se já existe cliente com mesmo nome ou telefone
+      const { data: existingClient, error: searchError } = await supabase
+        .from('clients')
+        .select('id')
+        .or(`name.eq."${name.trim()}",phone.eq."${phoneOrEmail}"`)
+        .maybeSingle();
+
+      if (searchError && searchError.code !== 'PGRST116') {
+        console.error('Error searching existing client:', searchError);
+      }
+
+      if (!existingClient) {
+        // Só criar se não existe cliente com mesmo nome/telefone
+        const { error: clientError } = await supabase
+          .from('clients')
+          .insert([
+            {
+              name: name.trim(),
+              phone: phoneOrEmail,
+              cpf: '', // CPF agora é opcional
+              accepts_whatsapp: true,
+              status: 'active'
+            },
+          ]);
+
+        if (clientError) {
+          console.error('Error creating client:', clientError);
+        } else {
+          console.log('✅ New client created for authenticated user');
+        }
+      } else {
+        console.log('✅ Client already exists, skipping creation');
       }
     }
 
