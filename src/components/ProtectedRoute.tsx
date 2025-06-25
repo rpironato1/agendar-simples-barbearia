@@ -9,9 +9,9 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, userRole } = useAuth();
 
-  console.log('ProtectedRoute check:', { user: user?.email, isAdmin, requireAdmin, loading });
+  console.log('ProtectedRoute check:', { user: user?.email, isAdmin, userRole, requireAdmin, loading });
 
   if (loading) {
     return (
@@ -26,7 +26,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   }
 
   if (requireAdmin && !isAdmin) {
-    console.log('Access denied: not admin');
+    console.log('Access denied: not admin, role:', userRole);
     return <Navigate to="/" replace />;
   }
 

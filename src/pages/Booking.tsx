@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,14 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
+import { 
+  validateName, 
+  validatePhone, 
+  sanitizeInput, 
+  sanitizePhoneNumber, 
+  validateAppointmentDate, 
+  validateAppointmentTime 
+} from "@/utils/validation";
 
 const Booking = () => {
   const navigate = useNavigate();
@@ -24,6 +31,7 @@ const Booking = () => {
     barber: "",
     time: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   console.log('🚀 Booking component rendered with formData:', formData);
 
@@ -71,13 +79,6 @@ const Booking = () => {
     }
   });
 
-  // Função para limpar telefone (apenas números)
-  const cleanPhone = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
-    console.log('📱 Phone cleaned:', value, '->', cleaned);
-    return cleaned;
-  };
-
   const timeSlots = [
     "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
     "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
@@ -87,62 +88,85 @@ const Booking = () => {
   const handleInputChange = (field: string, value: string) => {
     console.log(`🔄 Input change - ${field}:`, value);
     
-    if (field === 'phone') {
-      value = cleanPhone(value);
+    let sanitizedValue = value;
+    
+    if (field === 'name') {
+      sanitizedValue = sanitizeInput(value);
+    } else if (field === 'phone') {
+      sanitizedValue = sanitizePhoneNumber(value);
     }
     
     setFormData(prev => {
-      const newData = { ...prev, [field]: value };
+      const newData = { ...prev, [field]: sanitizedValue };
       console.log('📝 Updated formData:', newData);
       return newData;
     });
   };
 
+  const validateForm = (): boolean => {
+    // Validações básicas
+    if (!selectedDate) {
+      toast.error("Por favor, selecione uma data");
+      return false;
+    }
+
+    if (!validateAppointmentDate(selectedDate)) {
+      toast.error("Não é possível agendar para datas passadas");
+      return false;
+    }
+
+    if (!formData.name.trim()) {
+      toast.error("Por favor, digite seu nome");
+      return false;
+    }
+
+    if (!validateName(formData.name)) {
+      toast.error("Nome deve conter apenas letras e ter entre 2-100 caracteres");
+      return false;
+    }
+
+    if (!formData.phone) {
+      toast.error("Por favor, digite seu telefone");
+      return false;
+    }
+
+    if (!validatePhone(formData.phone)) {
+      toast.error("Telefone deve ter 10 ou 11 dígitos");
+      return false;
+    }
+
+    if (!formData.service) {
+      toast.error("Por favor, selecione um serviço");
+      return false;
+    }
+
+    if (!formData.time) {
+      toast.error("Por favor, selecione um horário");
+      return false;
+    }
+
+    if (!validateAppointmentTime(formData.time, selectedDate)) {
+      toast.error("Não é possível agendar para horários passados");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting) return;
     
     console.log('🚀 Starting appointment booking process...');
     console.log('📋 Form data:', formData);
     console.log('📅 Selected date:', selectedDate);
     
-    // Validações básicas
-    if (!selectedDate) {
-      console.log('❌ Validation failed: No date selected');
-      toast.error("Por favor, selecione uma data");
+    if (!validateForm()) {
       return;
     }
 
-    if (!formData.name.trim()) {
-      console.log('❌ Validation failed: No name provided');
-      toast.error("Por favor, digite seu nome");
-      return;
-    }
-
-    if (!formData.phone) {
-      console.log('❌ Validation failed: No phone provided');
-      toast.error("Por favor, digite seu telefone");
-      return;
-    }
-
-    if (formData.phone.length < 10) {
-      console.log('❌ Validation failed: Phone too short:', formData.phone.length);
-      toast.error("Telefone deve ter pelo menos 10 dígitos");
-      return;
-    }
-
-    if (!formData.service) {
-      console.log('❌ Validation failed: No service selected');
-      toast.error("Por favor, selecione um serviço");
-      return;
-    }
-
-    if (!formData.time) {
-      console.log('❌ Validation failed: No time selected');
-      toast.error("Por favor, selecione um horário");
-      return;
-    }
-
-    console.log('✅ All validations passed, proceeding with booking...');
+    setIsSubmitting(true);
 
     try {
       // Primeiro, verificar se o cliente já existe pelo telefone
@@ -156,7 +180,6 @@ const Booking = () => {
 
       if (clientSearchError) {
         console.error('❌ Error searching for client:', clientSearchError);
-        // Continuar mesmo com erro na busca
       }
 
       let clientId = null;
@@ -203,12 +226,6 @@ const Booking = () => {
 
         if (clientError) {
           console.error('❌ Error creating client:', clientError);
-          console.error('❌ Client error details:', {
-            message: clientError.message,
-            details: clientError.details,
-            hint: clientError.hint,
-            code: clientError.code
-          });
           toast.error("Erro ao cadastrar cliente. Tente novamente.");
           return;
         }
@@ -254,12 +271,6 @@ const Booking = () => {
 
       if (appointmentError) {
         console.error('❌ Error creating appointment:', appointmentError);
-        console.error('❌ Appointment error details:', {
-          message: appointmentError.message,
-          details: appointmentError.details,
-          hint: appointmentError.hint,
-          code: appointmentError.code
-        });
         toast.error("Erro ao criar agendamento. Tente novamente.");
         return;
       }
@@ -293,6 +304,8 @@ const Booking = () => {
     } catch (error) {
       console.error('💥 Unexpected error in booking process:', error);
       toast.error("Erro interno. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -342,6 +355,7 @@ const Booking = () => {
                     className="bg-slate-700 border-slate-600 text-white"
                     placeholder="Seu nome completo"
                     required
+                    maxLength={100}
                   />
                 </div>
                 <div className="space-y-2">
@@ -353,8 +367,9 @@ const Booking = () => {
                     className="bg-slate-700 border-slate-600 text-white"
                     placeholder="11999999999 (apenas números)"
                     required
+                    maxLength={11}
                   />
-                  <p className="text-xs text-gray-400">Digite apenas números (mínimo 10 dígitos)</p>
+                  <p className="text-xs text-gray-400">Digite apenas números (10-11 dígitos)</p>
                 </div>
               </div>
 
@@ -468,10 +483,10 @@ const Booking = () => {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold py-3 text-lg"
-                disabled={servicesLoading || barbersLoading}
+                disabled={servicesLoading || barbersLoading || isSubmitting}
               >
                 <DollarSign className="mr-2 h-5 w-5" />
-                {servicesLoading || barbersLoading ? 'Carregando...' : 'Confirmar Agendamento'}
+                {isSubmitting ? 'Processando...' : (servicesLoading || barbersLoading ? 'Carregando...' : 'Confirmar Agendamento')}
               </Button>
             </form>
           </CardContent>
