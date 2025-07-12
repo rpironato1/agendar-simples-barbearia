@@ -175,12 +175,82 @@ npm run lint         # Executa ESLint
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 📞 Suporte
+## 🎯 Recursos Técnicos Avançados
 
-Para dúvidas ou suporte:
-- Abra uma [issue](../../issues)
-- Entre em contato: [seu-email@exemplo.com]
+### Arquitetura
+- **Frontend SPA** com roteamento client-side
+- **Estado Global** gerenciado com TanStack Query
+- **Cache Inteligente** com invalidação automática
+- **Otimistic Updates** para melhor UX
+- **Error Boundaries** para tratamento de erros
+
+### Performance
+- **Code Splitting** automático por rotas
+- **Lazy Loading** de componentes
+- **Memoização** de componentes pesados
+- **Debounce** em buscas e filtros
+- **Virtual Scrolling** para listas grandes
+
+### Monitoramento
+- **Job Keep-Alive** para manter Supabase ativo
+- **Logs estruturados** para debugging
+- **Health checks** automáticos
+- **Error tracking** integrado
+
+## 🔄 Atualizações Recentes
+
+### v2.1.0 - Janeiro 2025
+- ✅ Implementado job keep-alive para Supabase
+- ✅ Migração automática de banco de dados
+- ✅ Melhorias na performance do dashboard
+- ✅ Correções de segurança RLS
+- ✅ Otimização de queries SQL
+
+### Próximas Features
+- 🔄 Integração com WhatsApp Business API
+- 🔄 Sistema de avaliações e feedback
+- 🔄 Relatórios avançados em PDF
+- 🔄 App mobile nativo
+- 🔄 Integração com sistemas de pagamento
+
+## 📊 Métricas do Projeto
+
+- **Linhas de Código**: ~15.000 LOC
+- **Componentes React**: 25+
+- **Hooks Customizados**: 8
+- **Páginas**: 7
+- **Tabelas no Banco**: 15+
+- **Cobertura de Testes**: Em desenvolvimento
+
+## 🛡️ Segurança e Compliance
+
+- **LGPD Compliant** - Proteção de dados pessoais
+- **Criptografia** end-to-end para dados sensíveis
+- **Auditoria** completa de ações administrativas
+- **Backup automático** diário do banco de dados
+- **Rate limiting** para prevenir ataques
+
+## 📞 Suporte e Contato
+
+### Desenvolvedor Principal
+**Rodolfo Pironato**
+- 📧 Email: rodolfopironato@turnbold.co
+- 🏢 Empresa: Turnbold
+- 💼 LinkedIn: [Rodolfo Pironato](https://linkedin.com/in/rodolfopironato)
+
+### Suporte Técnico
+- 🐛 Bugs e Issues: [GitHub Issues](../../issues)
+- 💡 Feature Requests: [GitHub Discussions](../../discussions)
+- 📖 Documentação: [Wiki do Projeto](../../wiki)
+- 🚀 Roadmap: [GitHub Projects](../../projects)
+
+### Comunidade
+- 💬 Discord: [Servidor da Comunidade](#)
+- 📱 Telegram: [Grupo de Desenvolvedores](#)
+- 🐦 Twitter: [@turnbold_tech](#)
 
 ---
 
-**Desenvolvido com ❤️ para barbeiros modernos** 💈
+**Desenvolvido com ❤️ por Rodolfo Pironato para barbeiros modernos** 💈
+
+*Este projeto é mantido pela [Turnbold](https://turnbold.co) - Soluções tecnológicas para pequenos negócios*
