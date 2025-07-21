@@ -2,6 +2,20 @@
 
 🚀 **Deploy automático funcionando!** - Teste realizado em 21/01/2025
 
+## 🔄 Sistema de Keep-Alive Automático
+
+Este projeto inclui um sistema automatizado para manter o Supabase ativo no plano gratuito:
+
+- **⏰ Execução diária**: Todo dia às 10:00 UTC (07:00 BRT)
+- **🗑️ Limpeza automática**: Todo dia às 13:00 UTC (10:00 BRT) 
+- **📊 Endpoint**: `/api/keep-alive`
+- **🎯 Objetivo**: Evitar que o Supabase seja pausado por inatividade
+
+### Funcionamento:
+1. **Inserção**: Adiciona um registro simples na tabela `keep_alive`
+2. **Limpeza**: Remove registros antigos (mais de 3 horas)
+3. **Automação**: Executado via Vercel Cron Jobs
+
 ## Sobre o Projeto
 
 Um sistema completo de agendamento para barbearias desenvolvido com React + TypeScript + Supabase.
