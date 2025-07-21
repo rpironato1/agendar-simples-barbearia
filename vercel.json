@@ -1,4 +1,14 @@
 {
+  "crons": [
+    {
+      "path": "/api/keep-alive?action=insert",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/keep-alive?action=cleanup", 
+      "schedule": "0 13 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
