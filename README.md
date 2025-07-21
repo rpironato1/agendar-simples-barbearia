@@ -1,4 +1,8 @@
-# 💈 Sistema de Agendamento para Barbearia
+# Sistema de Agendamento para Barbearia 💈
+
+🚀 **Deploy automático funcionando!** - Teste realizado em 21/01/2025
+
+## Sobre o Projeto
 
 Um sistema completo de agendamento para barbearias desenvolvido com React + TypeScript + Supabase.
 
