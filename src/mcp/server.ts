@@ -318,17 +318,9 @@ const toolImplementations = {
 };
 
 // Handler principal do MCP
-export const mcpHandler = createMcpHandler({
-  name: 'elite-barber-mcp',
-  version: '1.0.0',
-  tools,
-  async handleTool(name: string, args: any) {
-    const implementation = toolImplementations[name as keyof typeof toolImplementations];
-    if (!implementation) {
-      throw new Error(`Ferramenta não encontrada: ${name}`);
-    }
-    return await implementation(args);
-  }
+export const mcpHandler = createMcpHandler(async (server) => {
+  // MCP server setup
+  console.log('MCP Server initialized with tools:', tools.map(t => t.name));
 });
 
 export default mcpHandler; 

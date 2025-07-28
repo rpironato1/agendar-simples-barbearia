@@ -99,20 +99,9 @@ const AdminLogin = () => {
         
         // Wait a moment for auth state to update
         setTimeout(() => {
-          // Check if user is admin before redirecting
-          const userIsAdmin = data.user.email === 'rodolfopironato@yahoo.com';
-          console.log('User is admin:', userIsAdmin);
-          
-          if (userIsAdmin) {
-            navigate("/admin");
-          } else {
-            toast({
-              title: "Acesso negado",
-              description: "Você não tem permissão para acessar o painel administrativo.",
-              variant: "destructive",
-            });
-            navigate("/");
-          }
+          // Redirect will be handled by the ProtectedRoute component
+          // which will check the user role from the database
+          navigate("/admin");
         }, 1000);
       }
     } catch (error) {
@@ -219,8 +208,8 @@ const AdminLogin = () => {
           </form>
           
           <div className="mt-6 text-center">
-            <p className="text-gray-400 text-sm mb-2">Para criar conta de admin:</p>
-            <p className="text-gray-300 text-xs">Email: rodolfopironato@yahoo.com ou Telefone: (11) 99999-0000</p>
+            <p className="text-gray-400 text-sm mb-2">Para obter acesso de admin:</p>
+            <p className="text-gray-300 text-xs">Entre em contato com o administrador do sistema</p>
           </div>
           
           <div className="mt-4 text-center">
