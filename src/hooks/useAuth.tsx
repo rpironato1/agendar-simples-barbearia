@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, Profile } from '@/lib/supabase';
+import type { AuthResponse, AuthError } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
@@ -7,8 +8,8 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ data: any; error: any }>;
-  signUp: (email: string, password: string, name: string, phone: string) => Promise<{ data: any; error: any }>;
+  signIn: (email: string, password: string) => Promise<{ data: AuthResponse['data']; error: AuthError | null }>;
+  signUp: (email: string, password: string, name: string, phone: string) => Promise<{ data: AuthResponse['data']; error: AuthError | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
   userRole: string | null;

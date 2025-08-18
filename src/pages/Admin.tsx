@@ -15,10 +15,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import FinancialDashboard from "@/components/FinancialDashboard";
+import { AppointmentWithRelations } from "@/types/mcp";
 
 // ✅ Helper function para extrair dados do cliente do campo notes
 // ✅ Helper function para obter dados do cliente da tabela CLIENTS
-const getClientData = (appointment: any) => {
+const getClientData = (appointment: AppointmentWithRelations) => {
   // Buscar dados da tabela clients (único lugar onde ficam os dados)
   if (appointment.clients?.name) {
     return {
@@ -51,7 +52,7 @@ const Admin = () => {
   
   // ✅ Estados para modal de pagamento
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentWithRelations | null>(null);
   const [paymentData, setPaymentData] = useState({
     type: 'single', // 'single' ou 'mixed'
     method: '', // para pagamento único
@@ -170,7 +171,7 @@ const Admin = () => {
   };
 
   // ✅ Função para mostrar status de pagamento
-  const getPaymentStatus = (appointment: any) => {
+  const getPaymentStatus = (appointment: AppointmentWithRelations) => {
     // Se o agendamento foi cancelado, mostrar cancelado
     if (appointment.status === 'cancelled') {
       return <Badge className="bg-red-500/20 text-red-400">Cancelado</Badge>;
@@ -239,7 +240,7 @@ const Admin = () => {
   };
 
   // ✅ Função para abrir modal de pagamento
-  const openPaymentModal = (appointment: any) => {
+  const openPaymentModal = (appointment: AppointmentWithRelations) => {
     setSelectedAppointment(appointment);
     setPaymentData({
       type: 'single',
@@ -270,7 +271,7 @@ const Admin = () => {
 
     try {
       let paymentMethodString = '';
-      let totalAmount = Number(selectedAppointment.price || 0);
+      const totalAmount = Number(selectedAppointment.price || 0);
       
       if (paymentData.type === 'single') {
         if (!paymentData.method) {
@@ -468,7 +469,7 @@ const Admin = () => {
       setSelectedAppointment(null);
       
       // ✅ Atualizar manualmente o cache local ANTES de invalidar
-      queryClient.setQueryData(['appointments'], (oldData: any[]) => {
+      queryClient.setQueryData(['appointments'], (oldData: AppointmentWithRelations[] | undefined) => {
         if (!oldData) return oldData;
         
         return oldData.map(appointment => {

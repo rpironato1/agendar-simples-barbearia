@@ -1,5 +1,13 @@
 import { createMcpHandler } from '@vercel/mcp-adapter';
 import { supabase } from '@/lib/supabase';
+import { 
+  GetAppointmentsArgs, 
+  GetClientsArgs, 
+  GetFinancialDataArgs, 
+  GetServicesArgs, 
+  DeployStatusArgs,
+  McpResponse 
+} from '@/types/mcp';
 
 // Ferramentas disponíveis para o MCP
 const tools = [
@@ -79,7 +87,7 @@ const tools = [
 
 // Implementação das ferramentas
 const toolImplementations = {
-  async get_appointments(args: any) {
+  async get_appointments(args: GetAppointmentsArgs): Promise<McpResponse> {
     try {
       let query = supabase
         .from('appointments')
@@ -134,7 +142,7 @@ const toolImplementations = {
     }
   },
 
-  async get_clients(args: any) {
+  async get_clients(args: GetClientsArgs): Promise<McpResponse> {
     try {
       let query = supabase
         .from('clients')
@@ -177,10 +185,10 @@ const toolImplementations = {
     }
   },
 
-  async get_financial_data(args: any) {
+  async get_financial_data(args: GetFinancialDataArgs): Promise<McpResponse> {
     try {
       const { period } = args;
-      let startDate = new Date();
+      const startDate = new Date();
       
       switch (period) {
         case 'today':
@@ -215,7 +223,7 @@ const toolImplementations = {
       const count = appointments?.length || 0;
       const avgTicket = count > 0 ? total / count : 0;
 
-      const paymentMethods = appointments?.reduce((acc: any, apt) => {
+      const paymentMethods = appointments?.reduce((acc: Record<string, number>, apt) => {
         const method = apt.payment_method || 'Não informado';
         acc[method] = (acc[method] || 0) + (apt.services?.price || 0);
         return acc;
@@ -250,7 +258,7 @@ const toolImplementations = {
     }
   },
 
-  async get_services(args: any) {
+  async get_services(args: GetServicesArgs): Promise<McpResponse> {
     try {
       const { active_only = true } = args;
       
@@ -296,7 +304,7 @@ const toolImplementations = {
     }
   },
 
-  async deploy_status() {
+  async deploy_status(args: DeployStatusArgs): Promise<McpResponse> {
     return {
       content: [
         {
@@ -323,4 +331,4 @@ export const mcpHandler = createMcpHandler(async (server) => {
   console.log('MCP Server initialized with tools:', tools.map(t => t.name));
 });
 
-export default mcpHandler; 
+export default mcpHandler;
