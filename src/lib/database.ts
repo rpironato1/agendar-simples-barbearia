@@ -7,7 +7,7 @@ import { supabase } from './supabase';
 import { localDb, createLocalClient } from './localStorage';
 
 // Environment variable to control database type
-const USE_SUPABASE = process.env.VITE_USE_SUPABASE === 'true';
+const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
 
 // Interface that both implementations must follow
 export interface DatabaseClient {
