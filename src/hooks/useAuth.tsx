@@ -10,8 +10,10 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ data: AuthResponse['data']; error: AuthError | null }>;
   signUp: (email: string, password: string, name: string, phone: string) => Promise<{ data: AuthResponse['data']; error: AuthError | null }>;
+  signUpBarbershop: (email: string, password: string, barbershopData: any) => Promise<{ data: AuthResponse['data']; error: AuthError | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isBarbershop: boolean;
   userRole: string | null;
 }
 
@@ -24,8 +26,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Secure admin check using database role
+  // Role checks using database role
   const isAdmin = userRole === 'admin';
+  const isBarbershop = userRole === 'barbershop';
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -249,6 +252,113 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { data, error };
   };
 
+  const signUpBarbershop = async (email: string, password: string, barbershopData: any) => {
+    try {
+      // Clean up any existing auth state
+      cleanupAuthState();
+      await supabase.auth.signOut();
+    } catch (err) {
+      // Continue even if this fails
+    }
+
+    // Input validation
+    if (!email || !password || !barbershopData.barbershopName || !barbershopData.ownerName) {
+      return { data: null, error: { message: 'Todos os campos obrigatórios devem ser preenchidos' } };
+    }
+
+    if (!email.includes('@')) {
+      return { data: null, error: { message: 'Email inválido' } };
+    }
+
+    if (password.length < 6) {
+      return { data: null, error: { message: 'Senha deve ter pelo menos 6 caracteres' } };
+    }
+
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim().toLowerCase(),
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          name: barbershopData.ownerName.trim(),
+          phone: barbershopData.phone,
+          email_confirm: true // Auto-confirm to bypass email verification
+        }
+      }
+    });
+
+    if (data.user && !error) {
+      // Create profile for auth relationship
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: data.user.id,
+            name: barbershopData.ownerName.trim(),
+            phone: barbershopData.phone,
+          },
+        ]);
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+      }
+
+      // Create barbershop using the function
+      const { data: barbershopResult, error: barbershopError } = await supabase
+        .rpc('create_barbershop_with_defaults', {
+          barbershop_name: barbershopData.barbershopName,
+          owner_name: barbershopData.ownerName,
+          email: email.trim().toLowerCase(),
+          phone: barbershopData.phone || null,
+          address: barbershopData.address || null,
+          city: barbershopData.city || null,
+          state: barbershopData.state || null,
+          zip_code: barbershopData.zipCode || null,
+          plan_id: barbershopData.selectedPlan || 'basic'
+        });
+
+      if (barbershopError) {
+        console.error('Error creating barbershop:', barbershopError);
+        return { data: null, error: { message: 'Erro ao criar barbearia' } };
+      }
+
+      // Link user to barbershop
+      const { error: linkError } = await supabase
+        .from('barbershop_users')
+        .insert([
+          {
+            user_id: data.user.id,
+            barbershop_id: barbershopResult,
+            role: 'owner'
+          },
+        ]);
+
+      if (linkError) {
+        console.error('Error linking user to barbershop:', linkError);
+      }
+
+      // Set user role as barbershop
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert([
+          {
+            user_id: data.user.id,
+            role: 'barbershop'
+          },
+        ]);
+
+      if (roleError) {
+        console.error('Error setting user role:', roleError);
+      }
+
+      console.log('✅ Barbershop created successfully');
+    }
+
+    return { data, error };
+  };
+
   const signOut = async () => {
     try {
       cleanupAuthState();
@@ -270,8 +380,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loading,
       signIn,
       signUp,
+      signUpBarbershop,
       signOut,
       isAdmin,
+      isBarbershop,
       userRole,
     }}>
       {children}
