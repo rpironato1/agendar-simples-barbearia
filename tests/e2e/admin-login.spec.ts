@@ -46,7 +46,7 @@ test.describe('Admin Login and Dashboard', () => {
     await expect(page.locator('[data-testid="admin-stats"]')).toBeVisible();
   });
 
-  test('should display admin dashboard features', async ({ page }) => {
+  test('should display admin dashboard features - SaaS Platform Management', async ({ page }) => {
     // Login as admin first
     await page.goto('/admin-login');
     await page.fill('input[type="email"]', 'admin@demo.com');
@@ -54,21 +54,24 @@ test.describe('Admin Login and Dashboard', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL('/admin');
     
-    // Check dashboard stats cards
-    await expect(page.locator('text=Agendamentos Hoje')).toBeVisible();
-    await expect(page.locator('text=Receita do Mês')).toBeVisible();
-    await expect(page.locator('text=Barbeiros Ativos')).toBeVisible();
-    await expect(page.locator('text=Serviços Ativos')).toBeVisible();
+    // Check if we're now in the God Admin Dashboard
+    await expect(page.locator('h1')).toContainText('Admin SaaS Platform');
+    await expect(page.locator('text=Gestão Completa da Plataforma')).toBeVisible();
+    
+    // Check platform stats cards
+    await expect(page.locator('text=Total Barbearias')).toBeVisible();
+    await expect(page.locator('text=Barbearias Ativas')).toBeVisible();
+    await expect(page.locator('text=Em Trial')).toBeVisible();
+    await expect(page.locator('text=Receita Mensal')).toBeVisible();
     
     // Check tabs are present
-    await expect(page.locator('text=Agenda')).toBeVisible();
+    await expect(page.locator('text=Barbearias')).toBeVisible();
+    await expect(page.locator('text=Planos')).toBeVisible();
     await expect(page.locator('text=Financeiro')).toBeVisible();
-    await expect(page.locator('text=Barbeiros')).toBeVisible();
-    await expect(page.locator('text=Serviços')).toBeVisible();
-    await expect(page.locator('text=Clientes')).toBeVisible();
+    await expect(page.locator('text=Sistema')).toBeVisible();
   });
 
-  test('should be able to navigate between admin tabs', async ({ page }) => {
+  test('should be able to navigate between platform management tabs', async ({ page }) => {
     // Login as admin
     await page.goto('/admin-login');
     await page.fill('input[type="email"]', 'admin@demo.com');
@@ -76,21 +79,27 @@ test.describe('Admin Login and Dashboard', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL('/admin');
     
-    // Test navigation between tabs
-    await page.click('text=Barbeiros');
-    await expect(page.locator('text=Gerencie a equipe de barbeiros')).toBeVisible();
+    // Test navigation between platform tabs
+    await page.click('text=Barbearias');
+    await expect(page.locator('text=Gestão de Barbearias')).toBeVisible();
+    await expect(page.locator('text=Todas as barbearias cadastradas na plataforma')).toBeVisible();
     
-    await page.click('text=Serviços');
-    await expect(page.locator('text=Gerencie os serviços oferecidos')).toBeVisible();
-    
-    await page.click('text=Clientes');
-    await expect(page.locator('text=Gestão de Clientes')).toBeVisible();
+    await page.click('text=Planos');
+    await expect(page.locator('text=Planos de Assinatura')).toBeVisible();
+    await expect(page.locator('text=Básico')).toBeVisible();
+    await expect(page.locator('text=Premium')).toBeVisible();
+    await expect(page.locator('text=Enterprise')).toBeVisible();
     
     await page.click('text=Financeiro');
-    await expect(page.locator('text=Relatórios e transações')).toBeVisible();
+    await expect(page.locator('text=Transações da Plataforma')).toBeVisible();
+    
+    await page.click('text=Sistema');
+    await expect(page.locator('text=Status do Sistema')).toBeVisible();
+    await expect(page.locator('text=Base de Dados:')).toBeVisible();
+    await expect(page.locator('text=LocalStorage')).toBeVisible();
   });
 
-  test('should allow admin to add new barber', async ({ page }) => {
+  test('should allow platform admin to view subscription plans', async ({ page }) => {
     // Login as admin
     await page.goto('/admin-login');
     await page.fill('input[type="email"]', 'admin@demo.com');
@@ -98,24 +107,27 @@ test.describe('Admin Login and Dashboard', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL('/admin');
     
-    // Navigate to Barbeiros tab
-    await page.click('text=Barbeiros');
+    // Navigate to Planos tab
+    await page.click('text=Planos');
     
-    // Click Add Barber button
-    await page.click('button:has-text("Adicionar Barbeiro")');
+    // Verify subscription plans are displayed
+    await expect(page.locator('text=Básico')).toBeVisible();
+    await expect(page.locator('text=R$ 49.9')).toBeVisible();
     
-    // Fill barber details
-    await page.fill('input[id="barber-name"]', 'João Silva');
-    await page.fill('input[id="barber-phone"]', '11999999999');
+    await expect(page.locator('text=Premium')).toBeVisible();
+    await expect(page.locator('text=R$ 99.9')).toBeVisible();
+    await expect(page.locator('text=Popular')).toBeVisible();
     
-    // Submit form
-    await page.click('button:has-text("Adicionar")');
+    await expect(page.locator('text=Enterprise')).toBeVisible();
+    await expect(page.locator('text=R$ 199.9')).toBeVisible();
     
-    // Check for success message
-    await expect(page.locator('.sonner-toast')).toContainText('Barbeiro adicionado com sucesso');
+    // Check features are displayed
+    await expect(page.locator('text=Barbeiros:')).toBeVisible();
+    await expect(page.locator('text=Clientes:')).toBeVisible();
+    await expect(page.locator('text=Ilimitado')).toBeVisible();
   });
 
-  test('should allow admin to add new service', async ({ page }) => {
+  test('should allow platform admin to check system status', async ({ page }) => {
     // Login as admin
     await page.goto('/admin-login');
     await page.fill('input[type="email"]', 'admin@demo.com');
@@ -123,22 +135,23 @@ test.describe('Admin Login and Dashboard', () => {
     await page.click('button[type="submit"]');
     await page.waitForURL('/admin');
     
-    // Navigate to Serviços tab
-    await page.click('text=Serviços');
+    // Navigate to Sistema tab
+    await page.click('text=Sistema');
     
-    // Click Add Service button
-    await page.click('button:has-text("Adicionar Serviço")');
+    // Check system information
+    await expect(page.locator('text=Status do Sistema')).toBeVisible();
+    await expect(page.locator('text=Base de Dados:')).toBeVisible();
+    await expect(page.locator('text=LocalStorage')).toBeVisible();
+    await expect(page.locator('text=Versão:')).toBeVisible();
+    await expect(page.locator('text=1.0.0')).toBeVisible();
     
-    // Fill service details
-    await page.fill('input[id="service-name"]', 'Corte Premium');
-    await page.fill('input[id="service-duration"]', '45');
-    await page.fill('input[id="service-price"]', '50.00');
+    // Check development tools
+    await expect(page.locator('button:has-text("Verificar Base de Dados")')).toBeVisible();
+    await expect(page.locator('button:has-text("Exportar Dados")')).toBeVisible();
     
-    // Submit form
-    await page.click('button:has-text("Adicionar")');
-    
-    // Check for success message
-    await expect(page.locator('.sonner-toast')).toContainText('Serviço adicionado com sucesso');
+    // Test database verification button
+    await page.click('button:has-text("Verificar Base de Dados")');
+    await expect(page.locator('.sonner-toast')).toBeVisible();
   });
 
   test('should allow admin to logout', async ({ page }) => {

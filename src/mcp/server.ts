@@ -1,5 +1,5 @@
 import { createMcpHandler } from '@vercel/mcp-adapter';
-import { supabase } from '@/lib/supabase';
+import { db } from '@/lib/database';
 import { 
   GetAppointmentsArgs, 
   GetClientsArgs, 
@@ -89,7 +89,7 @@ const tools = [
 const toolImplementations = {
   async get_appointments(args: GetAppointmentsArgs): Promise<McpResponse> {
     try {
-      let query = supabase
+      let query = db
         .from('appointments')
         .select(`
           *,
@@ -144,7 +144,7 @@ const toolImplementations = {
 
   async get_clients(args: GetClientsArgs): Promise<McpResponse> {
     try {
-      let query = supabase
+      let query = db
         .from('clients')
         .select('*')
         .order('created_at', { ascending: false });
@@ -205,7 +205,7 @@ const toolImplementations = {
           break;
       }
 
-      const { data: appointments, error } = await supabase
+      const { data: appointments, error } = await db
         .from('appointments')
         .select(`
           *,
@@ -262,7 +262,7 @@ const toolImplementations = {
     try {
       const { active_only = true } = args;
       
-      let query = supabase
+      let query = db
         .from('services')
         .select('*')
         .order('name');

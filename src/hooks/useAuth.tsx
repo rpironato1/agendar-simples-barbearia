@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase, Profile } from '@/lib/supabase';
+import { db, Profile } from '@/lib/database';
 import type { AuthResponse, AuthError } from '@supabase/supabase-js';
 import { User, Session } from '@supabase/supabase-js';
 
@@ -15,6 +15,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isBarbershop: boolean;
   userRole: string | null;
+  currentBarbershopId: string | null;
+  barbershopData: any | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,6 +26,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentBarbershopId, setCurrentBarbershopId] = useState<string | null>(null);
+  const [barbershopData, setBarbershopData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Role checks using database role
@@ -32,7 +36,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = db.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state change:', event, session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
@@ -42,21 +46,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setTimeout(() => {
           fetchProfile(session.user.id);
           fetchUserRole(session.user.id);
+          fetchBarbershopData(session.user.id);
         }, 0);
       } else {
         setProfile(null);
         setUserRole(null);
+        setCurrentBarbershopId(null);
+        setBarbershopData(null);
         setLoading(false);
+        // Clear database context
+        db.setContext(null, null, null);
       }
     });
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    db.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchUserRole(session.user.id);
+        fetchBarbershopData(session.user.id);
       } else {
         setLoading(false);
       }
@@ -67,7 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -85,7 +95,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchUserRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
@@ -104,6 +114,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserRole('user'); // Default to user role
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBarbershopData = async (userId: string) => {
+    try {
+      // Get barbershop association
+      const { data: barbershopUser, error: linkError } = await db
+        .from('barbershop_users')
+        .select('barbershop_id, role')
+        .eq('user_id', userId)
+        .single();
+
+      if (linkError && linkError.code !== 'PGRST116') {
+        console.error('Error fetching barbershop link:', linkError);
+        return;
+      }
+
+      if (barbershopUser?.barbershop_id) {
+        setCurrentBarbershopId(barbershopUser.barbershop_id);
+        
+        // Get barbershop details
+        const { data: barbershop, error: barbershopError } = await db
+          .from('barbershops')
+          .select('*')
+          .eq('id', barbershopUser.barbershop_id)
+          .single();
+
+        if (barbershopError) {
+          console.error('Error fetching barbershop:', barbershopError);
+        } else {
+          setBarbershopData(barbershop);
+          
+          // Set database context for RLS
+          db.setContext(barbershopUser.barbershop_id, userId, userRole);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching barbershop data:', error);
     }
   };
 
@@ -127,7 +175,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       // Clean up any existing auth state
       cleanupAuthState();
-      await supabase.auth.signOut();
+      await db.auth.signOut();
     } catch (err) {
       // Continue even if this fails
     }
@@ -145,7 +193,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { data: null, error: { message: 'Senha deve ter pelo menos 6 caracteres' } };
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await db.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password,
     });
@@ -156,7 +204,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       // Clean up any existing auth state
       cleanupAuthState();
-      await supabase.auth.signOut();
+      await db.auth.signOut();
     } catch (err) {
       // Continue even if this fails
     }
@@ -183,7 +231,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Determine if phoneOrEmail is a phone number or email
     const isPhone = phoneOrEmail.includes('(') && phoneOrEmail.includes(')');
     
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await db.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: {
@@ -199,7 +247,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (data.user && !error) {
       // Create profile for auth relationship
-      const { error: profileError } = await supabase
+      const { error: profileError } = await db
         .from('profiles')
         .insert([
           {
@@ -215,7 +263,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // ✅ SALVAR NA TABELA CLIENTS (principal)
       // Verificar se já existe cliente com mesmo nome ou telefone
-      const { data: existingClient, error: searchError } = await supabase
+      const { data: existingClient, error: searchError } = await db
         .from('clients')
         .select('id')
         .or(`name.eq."${name.trim()}",phone.eq."${phoneOrEmail}"`)
@@ -227,7 +275,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!existingClient) {
         // Só criar se não existe cliente com mesmo nome/telefone
-        const { error: clientError } = await supabase
+        const { error: clientError } = await db
           .from('clients')
           .insert([
             {
@@ -256,7 +304,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       // Clean up any existing auth state
       cleanupAuthState();
-      await supabase.auth.signOut();
+      await db.auth.signOut();
     } catch (err) {
       // Continue even if this fails
     }
@@ -276,7 +324,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const redirectUrl = `${window.location.origin}/`;
     
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await db.auth.signUp({
       email: email.trim().toLowerCase(),
       password,
       options: {
@@ -291,7 +339,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (data.user && !error) {
       // Create profile for auth relationship
-      const { error: profileError } = await supabase
+      const { error: profileError } = await db
         .from('profiles')
         .insert([
           {
@@ -306,7 +354,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // Create barbershop using the function
-      const { data: barbershopResult, error: barbershopError } = await supabase
+      const { data: barbershopResult, error: barbershopError } = await db
         .rpc('create_barbershop_with_defaults', {
           barbershop_name: barbershopData.barbershopName,
           owner_name: barbershopData.ownerName,
@@ -325,7 +373,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // Link user to barbershop
-      const { error: linkError } = await supabase
+      const { error: linkError } = await db
         .from('barbershop_users')
         .insert([
           {
@@ -340,7 +388,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // Set user role as barbershop
-      const { error: roleError } = await supabase
+      const { error: roleError } = await db
         .from('user_roles')
         .insert([
           {
@@ -362,7 +410,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       cleanupAuthState();
-      await supabase.auth.signOut({ scope: 'global' });
+      await db.auth.signOut({ scope: 'global' });
+      // Clear database context
+      db.setContext(null, null, null);
       // Force page reload for clean state
       window.location.href = '/';
     } catch (error) {
@@ -385,6 +435,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isAdmin,
       isBarbershop,
       userRole,
+      currentBarbershopId,
+      barbershopData,
     }}>
       {children}
     </AuthContext.Provider>
