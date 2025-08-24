@@ -43,6 +43,7 @@ class LocalStorageDatabase {
   private currentBarbershopId: string | null = null;
   private currentUserId: string | null = null;
   private currentUserRole: string | null = null;
+  private authCallbacks: any[] = [];
 
   constructor() {
     this.initializeDatabase();
@@ -507,6 +508,13 @@ class LocalStorageDatabase {
         // Store session
         localStorage.setItem('barbershop_session', JSON.stringify(session));
         
+        // Trigger auth state change callbacks
+        if (this.authCallbacks) {
+          this.authCallbacks.forEach(callback => {
+            setTimeout(() => callback('SIGNED_IN', session), 0);
+          });
+        }
+        
         return { data: { user, session }, error: null };
       }
 
@@ -556,8 +564,26 @@ class LocalStorageDatabase {
     },
 
     onAuthStateChange: (callback: any) => {
-      // Simple implementation - in real app would use proper event system
-      return { data: { subscription: { unsubscribe: () => {} } } };
+      // Store callback for later use
+      this.authCallbacks = this.authCallbacks || [];
+      this.authCallbacks.push(callback);
+      
+      // Trigger callback with current session if exists
+      const session = localStorage.getItem('barbershop_session');
+      if (session) {
+        const parsedSession = JSON.parse(session);
+        setTimeout(() => callback('SIGNED_IN', parsedSession), 0);
+      }
+      
+      return { 
+        data: { 
+          subscription: { 
+            unsubscribe: () => {
+              this.authCallbacks = this.authCallbacks?.filter(cb => cb !== callback) || [];
+            } 
+          } 
+        } 
+      };
     }
   };
 

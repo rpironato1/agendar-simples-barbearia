@@ -25,12 +25,18 @@ export const CountUp = ({
     restDelta: 0.001
   });
   
-  const display = useTransform(spring, current => 
-    Math.floor(current).toLocaleString()
-  );
+  const display = useTransform(spring, current => {
+    const value = Math.floor(current);
+    // Handle NaN or invalid values
+    if (isNaN(value) || !isFinite(value)) {
+      return '0';
+    }
+    return value.toLocaleString();
+  });
 
   useEffect(() => {
-    if (isInView) {
+    // Only start animation if value is valid and in view
+    if (isInView && to && typeof to === 'number' && !isNaN(to)) {
       spring.set(to);
     }
   }, [spring, to, isInView]);
