@@ -163,7 +163,7 @@ const Index = () => {
                 </ShinyText>{" "}
                 Você
               </h1>
-              <p className="text-lg md:text-xl text-gray-300 mb-8 leading-relaxed">
+              <p className="text-lg md:text-xl text-overlay-accessible mb-8 leading-relaxed">
                 Experimente o melhor em cortes masculinos e cuidados com a barba. 
                 Profissionais qualificados, ambiente premium e atendimento personalizado.
               </p>
@@ -230,7 +230,7 @@ const Index = () => {
       </Section>
 
       {/* Services Section - Mobile-First */}
-      <Section id="servicos" background="muted">
+      <Section id="servicos" background="muted" className="section-accessible">
         <Container>
           <motion.div 
             className="text-center mb-12"
@@ -239,10 +239,10 @@ const Index = () => {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-accessible mb-4">
               <ShinyText text="Nossos Serviços" speed={4} />
             </h2>
-            <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-enhanced-contrast max-w-2xl mx-auto">
               Oferecemos uma gama completa de serviços para o homem moderno
             </p>
           </motion.div>

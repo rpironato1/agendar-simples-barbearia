@@ -6,33 +6,41 @@
 
 @layer base {
   :root {
+    /* WCAG 2.1 AA Compliant Color System */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 220 13% 18%; /* Enhanced contrast: ~12:1 ratio */
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 13% 18%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 220 13% 18%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary colors with proper contrast */
+    --primary: 220 90% 25%; /* Dark blue with sufficient contrast */
+    --primary-foreground: 0 0% 98%; /* High contrast white */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary with enhanced readability */
+    --secondary: 210 40% 94%;
+    --secondary-foreground: 220 13% 18%; /* Dark text for readability */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted colors compliant with WCAG */
+    --muted: 210 40% 94%;
+    --muted-foreground: 220 13% 30%; /* Better contrast ratio */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Accent colors */
+    --accent: 210 40% 94%;
+    --accent-foreground: 220 13% 18%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive with proper contrast */
+    --destructive: 0 72% 45%; /* Darker red for better contrast */
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* UI Elements */
+    --border: 214.3 31.8% 85%; /* Slightly darker for visibility */
+    --input: 0 0% 96%; /* Light gray background */
+    --input-foreground: 220 13% 18%; /* Dark text */
+    --ring: 220 90% 25%; /* Matches primary */
 
     --radius: 0.5rem;
 
@@ -54,33 +62,41 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* WCAG 2.1 AA Compliant Dark Mode */
+    --background: 220 13% 8%; /* Very dark background */
+    --foreground: 0 0% 95%; /* High contrast white text */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 13% 12%; /* Slightly lighter than background */
+    --card-foreground: 0 0% 95%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 13% 8%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary in dark mode */
+    --primary: 220 90% 60%; /* Lighter blue for dark backgrounds */
+    --primary-foreground: 220 13% 8%; /* Dark text on bright button */
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary dark mode */
+    --secondary: 220 13% 18%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Muted dark mode */
+    --muted: 220 13% 18%;
+    --muted-foreground: 0 0% 75%; /* Good contrast for secondary text */
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Accent dark mode */
+    --accent: 220 13% 18%;
+    --accent-foreground: 0 0% 95%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Destructive dark mode */
+    --destructive: 0 72% 55%; /* Brighter red for dark mode */
+    --destructive-foreground: 0 0% 95%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* UI elements dark mode */
+    --border: 220 13% 25%; /* Visible borders */
+    --input: 220 13% 15%; /* Dark input backgrounds */
+    --input-foreground: 0 0% 95%;
+    --ring: 220 90% 60%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -99,5 +115,148 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* WCAG 2.1 AA Compliant Utilities */
+@layer utilities {
+  /* High contrast text utilities */
+  .text-high-contrast {
+    color: hsl(var(--foreground));
+    filter: contrast(1.2);
+  }
+
+  .text-accessible {
+    color: hsl(220 13% 18%);
+  }
+
+  .text-accessible-dark {
+    color: hsl(0 0% 95%);
+  }
+
+  /* Button contrast fixes */
+  .btn-primary-accessible {
+    background-color: hsl(220 90% 25%);
+    color: hsl(0 0% 98%);
+    border: 2px solid hsl(220 90% 25%);
+  }
+
+  .btn-primary-accessible:hover {
+    background-color: hsl(220 90% 20%);
+    border-color: hsl(220 90% 20%);
+  }
+
+  .btn-primary-accessible:focus {
+    outline: 3px solid hsl(220 90% 60%);
+    outline-offset: 2px;
+  }
+
+  /* Secondary button with proper contrast */
+  .btn-secondary-accessible {
+    background-color: hsl(0 0% 96%);
+    color: hsl(220 13% 18%);
+    border: 2px solid hsl(220 13% 60%);
+  }
+
+  .btn-secondary-accessible:hover {
+    background-color: hsl(0 0% 90%);
+    border-color: hsl(220 13% 40%);
+  }
+
+  /* Link contrast fixes */
+  .link-accessible {
+    color: hsl(220 90% 25%);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .link-accessible:hover {
+    color: hsl(220 90% 20%);
+    text-decoration-thickness: 2px;
+  }
+
+  .link-accessible:focus {
+    outline: 2px solid hsl(220 90% 60%);
+    outline-offset: 2px;
+  }
+
+  /* Input field accessibility */
+  .input-accessible {
+    background-color: hsl(0 0% 96%);
+    color: hsl(220 13% 18%);
+    border: 2px solid hsl(220 13% 60%);
+  }
+
+  .input-accessible:focus {
+    border-color: hsl(220 90% 25%);
+    outline: 2px solid hsl(220 90% 60%);
+    outline-offset: 1px;
+  }
+
+  /* Enhanced text contrast for better accessibility */
+  .text-enhanced-contrast {
+    color: hsl(220 13% 25%); /* Darker gray for better contrast */
+  }
+
+  .text-overlay-accessible {
+    color: hsl(0 0% 98%);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  }
+
+  .bg-accessible-overlay {
+    background: rgba(255, 255, 255, 0.95); /* Higher opacity for better contrast */
+  }
+
+  .bg-accessible-dark-overlay {
+    background: rgba(15, 23, 42, 0.9); /* Sufficient contrast for white text */
+  }
+
+  /* Section improvements */
+  .section-accessible {
+    background: rgba(248, 250, 252, 0.95);
+  }
+
+  .section-accessible .text-muted {
+    color: hsl(220 13% 30%) !important;
+  }
+
+  /* Dark mode text improvements */
+  .dark .text-enhanced-contrast {
+    color: hsl(0 0% 85%);
+  }
+
+  .dark .section-accessible {
+    background: rgba(30, 41, 59, 0.9);
+  }
+
+  .dark .section-accessible .text-muted {
+    color: hsl(0 0% 75%) !important;
+  }
+
+  .dark .btn-primary-accessible {
+    background-color: hsl(220 90% 60%);
+    color: hsl(220 13% 8%);
+    border-color: hsl(220 90% 60%);
+  }
+
+  .dark .btn-primary-accessible:hover {
+    background-color: hsl(220 90% 65%);
+    border-color: hsl(220 90% 65%);
+  }
+
+  .dark .btn-secondary-accessible {
+    background-color: hsl(220 13% 18%);
+    color: hsl(0 0% 95%);
+    border-color: hsl(220 13% 40%);
+  }
+
+  .dark .link-accessible {
+    color: hsl(220 90% 60%);
+  }
+
+  .dark .input-accessible {
+    background-color: hsl(220 13% 15%);
+    color: hsl(0 0% 95%);
+    border-color: hsl(220 13% 40%);
   }
 }

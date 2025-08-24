@@ -44,30 +44,31 @@ export const TouchButton: React.FC<TouchButtonProps> = ({
 
   const variantClasses = {
     primary: cn(
-      'bg-primary text-primary-foreground',
-      'hover:bg-primary/90 active:bg-primary/80',
-      'focus-visible:ring-primary'
+      'btn-primary-accessible',
+      'hover:btn-primary-accessible:hover focus:btn-primary-accessible:focus',
+      'focus-visible:ring-primary transition-all duration-200'
     ),
     secondary: cn(
-      'bg-secondary text-secondary-foreground',
-      'hover:bg-secondary/80 active:bg-secondary/70',
-      'focus-visible:ring-secondary'
+      'btn-secondary-accessible',
+      'hover:btn-secondary-accessible:hover',
+      'focus-visible:ring-ring'
     ),
     outline: cn(
-      'border border-input bg-background',
+      'border-2 border-input bg-background text-foreground',
       'hover:bg-accent hover:text-accent-foreground',
       'active:bg-accent/80',
-      'focus-visible:ring-ring'
+      'focus-visible:ring-ring focus-visible:outline-2 focus-visible:outline-offset-2'
     ),
     ghost: cn(
+      'text-foreground',
       'hover:bg-accent hover:text-accent-foreground',
       'active:bg-accent/80',
-      'focus-visible:ring-ring'
+      'focus-visible:ring-ring focus-visible:outline-2 focus-visible:outline-offset-2'
     ),
     destructive: cn(
-      'bg-destructive text-destructive-foreground',
+      'bg-destructive text-destructive-foreground border-2 border-destructive',
       'hover:bg-destructive/90 active:bg-destructive/80',
-      'focus-visible:ring-destructive'
+      'focus-visible:ring-destructive focus-visible:outline-2 focus-visible:outline-offset-2'
     )
   };
 
