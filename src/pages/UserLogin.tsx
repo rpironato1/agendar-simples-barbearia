@@ -199,6 +199,7 @@ const UserLogin = () => {
                     value={credentials.email}
                     onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
                     className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -215,6 +216,7 @@ const UserLogin = () => {
                     value={credentials.phone}
                     onChange={handlePhoneChange}
                     className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    autoComplete="tel"
                     required
                   />
                 </div>
@@ -231,6 +233,7 @@ const UserLogin = () => {
                   value={credentials.password}
                   onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
                   className="bg-slate-700 border-slate-600 text-white"
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                   required
                 />
               </div>

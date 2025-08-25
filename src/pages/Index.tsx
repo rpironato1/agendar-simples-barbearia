@@ -58,6 +58,14 @@ const Index = () => {
 
   return (
     <ResponsiveLayout className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
+      {/* Skip Link for Accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-black focus:rounded-md focus:font-semibold"
+      >
+        Pular para conteúdo principal
+      </a>
+      
       {/* Animated Background */}
       <Beams color1="#FFD700" color2="#1E3A8A" opacity={0.2} />
       
@@ -147,7 +155,7 @@ const Index = () => {
       </motion.header>
 
       {/* Main Content */}
-      <main role="main" aria-label="Conteúdo principal">
+      <main role="main" aria-label="Conteúdo principal" id="main-content">
         {/* Hero Section - Mobile-First */}
         <Section fullHeight className="flex items-center">
         <Container>

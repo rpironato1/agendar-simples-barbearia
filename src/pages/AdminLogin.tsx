@@ -162,6 +162,7 @@ const AdminLogin = () => {
                     value={credentials.email}
                     onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
                     className="pl-10 input-accessible min-h-[48px]"
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -178,6 +179,7 @@ const AdminLogin = () => {
                     value={credentials.phone}
                     onChange={handlePhoneChange}
                     className="pl-10 input-accessible min-h-[48px]"
+                    autoComplete="tel"
                     required
                   />
                 </div>
@@ -195,6 +197,7 @@ const AdminLogin = () => {
                   value={credentials.password}
                   onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
                   className="pl-10 input-accessible min-h-[48px]"
+                  autoComplete="current-password"
                   required
                 />
               </div>
