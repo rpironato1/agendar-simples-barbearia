@@ -135,14 +135,16 @@ const UserLogin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700">
-        <CardHeader className="text-center">
-          <div className="bg-gradient-to-r from-amber-400 to-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Scissors className="h-8 w-8 text-black" />
-          </div>
-          <CardTitle className="text-2xl text-white">Elite Barber</CardTitle>
-          <p className="text-gray-400">{isLogin ? 'Acesse sua área pessoal' : 'Crie sua conta'}</p>
-        </CardHeader>
+      <main role="main" aria-label={isLogin ? 'Login de usuário' : 'Cadastro de usuário'}>
+        <Card className="w-full max-w-md bg-slate-800/50 border-slate-700">
+          <CardHeader className="text-center">
+            <div className="bg-gradient-to-r from-amber-400 to-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Scissors className="h-8 w-8 text-black" />
+            </div>
+            <h1 className="text-2xl text-white font-bold">{isLogin ? 'Login' : 'Cadastrar'}</h1>
+            <CardTitle className="text-xl text-white">Elite Barber</CardTitle>
+            <p className="text-gray-400">{isLogin ? 'Acesse sua área pessoal' : 'Crie sua conta'}</p>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Login Method Toggle */}
@@ -264,6 +266,7 @@ const UserLogin = () => {
           </div>
         </CardContent>
       </Card>
+      </main>
     </div>
   );
 };

@@ -83,13 +83,13 @@ const Index = () => {
             
             {/* Desktop Navigation */}
             {!isMobile && (
-              <div className="hidden md:block">
+              <nav role="navigation" aria-label="Menu principal" className="hidden md:block">
                 <PillNav 
                   items={navItems}
                   baseColor="#1E3A8A"
                   pillColor="#FFD700"
                 />
-              </div>
+              </nav>
             )}
             
             {/* Mobile Menu Button & CTA */}
@@ -146,8 +146,10 @@ const Index = () => {
         </Container>
       </motion.header>
 
-      {/* Hero Section - Mobile-First */}
-      <Section fullHeight className="flex items-center">
+      {/* Main Content */}
+      <main role="main" aria-label="Conteúdo principal">
+        {/* Hero Section - Mobile-First */}
+        <Section fullHeight className="flex items-center">
         <Container>
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <motion.div
@@ -532,6 +534,8 @@ const Index = () => {
           </div>
         </Container>
       </Section>
+
+      </main>
 
       {/* Footer */}
       <Footer />

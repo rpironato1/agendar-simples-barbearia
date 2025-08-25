@@ -197,14 +197,15 @@ const BarbershopSignup = () => {
           </Button>
         </div>
 
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto bg-gradient-to-r from-amber-400 to-amber-600 p-3 rounded-full w-fit mb-4">
-            <Store className="h-8 w-8 text-black" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Registre sua Barbearia
-          </h1>
+        <main role="main" aria-label="Cadastro de barbearia">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="mx-auto bg-gradient-to-r from-amber-400 to-amber-600 p-3 rounded-full w-fit mb-4">
+              <Store className="h-8 w-8 text-black" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Registre sua Barbearia
+            </h1>
           <p className="text-gray-400">
             Escolha seu plano e comece a gerenciar sua barbearia hoje mesmo
           </p>
@@ -259,7 +260,7 @@ const BarbershopSignup = () => {
                       )}
                       
                       <div className="text-center">
-                        <h3 className="text-white font-semibold text-lg mb-2">{plan.name}</h3>
+                        <h2 className="text-white font-semibold text-lg mb-2">{plan.name}</h2>
                         <div className="mb-4">
                           <span className="text-3xl font-bold text-white">{plan.price}</span>
                           <span className="text-gray-400">{plan.period}</span>
@@ -493,7 +494,7 @@ const BarbershopSignup = () => {
 
                 {/* Summary */}
                 <div className="p-4 bg-slate-700/30 rounded-lg">
-                  <h3 className="text-white font-semibold mb-2">Resumo do Pedido</h3>
+                  <h2 className="text-white font-semibold mb-2">Resumo do Pedido</h2>
                   <div className="flex justify-between items-center">
                     <span className="text-gray-300">
                       Plano {plans.find(p => p.id === selectedPlan)?.name}
@@ -541,6 +542,7 @@ const BarbershopSignup = () => {
             </Link>
           </p>
         </div>
+        </main>
       </div>
     </div>
   );

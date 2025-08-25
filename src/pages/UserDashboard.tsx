@@ -260,7 +260,8 @@ const UserDashboard = () => {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main role="main" aria-label="Dashboard do usuário">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Cards de Resumo */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-slate-800/50 border-slate-700">
@@ -947,7 +948,8 @@ const UserDashboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+        </div>
+      </main>
     </div>
   );
 };

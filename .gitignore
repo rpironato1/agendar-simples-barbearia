@@ -58,3 +58,6 @@ coverage/
 # pnpm-lock.yaml
 .vercel
 .env*.local
+
+*storybook.log
+storybook-static
