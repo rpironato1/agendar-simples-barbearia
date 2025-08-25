@@ -12,6 +12,9 @@ import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import UserLogin from "./pages/UserLogin";
 import UserDashboard from "./pages/UserDashboard";
+import BarbershopDashboard from "./pages/BarbershopDashboard";
+import BarbershopLogin from "./pages/BarbershopLogin";
+import BarbershopSignup from "./pages/BarbershopSignup";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +47,16 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            <Route 
+              path="/barbershop-dashboard" 
+              element={
+                <ProtectedRoute>
+                  <BarbershopDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/barbershop-login" element={<BarbershopLogin />} />
+            <Route path="/barbershop-signup" element={<BarbershopSignup />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

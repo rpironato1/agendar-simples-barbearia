@@ -8,11 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Users, Scissors, Settings, Plus, Phone, CheckCircle, XCircle, Clock, DollarSign, TrendingUp, LogOut, UserCheck, CreditCard, Banknote, Smartphone } from "lucide-react";
+import { Calendar, Users, Scissors, Settings, Plus, Phone, CheckCircle, XCircle, Clock, DollarSign, TrendingUp, LogOut, UserCheck, CreditCard, Banknote, Smartphone, Shield, Building, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/database";
 import { useAuth } from "@/hooks/useAuth";
 import FinancialDashboard from "@/components/FinancialDashboard";
 import { AppointmentWithRelations } from "@/types/mcp";
@@ -43,11 +43,16 @@ const getClientData = (appointment: AppointmentWithRelations) => {
 
 const Admin = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, isAdmin, userRole } = useAuth();
   const queryClient = useQueryClient();
   const [isAddBarberOpen, setIsAddBarberOpen] = useState(false);
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
   const [newBarber, setNewBarber] = useState({ name: "", phone: "" });
+
+  // God Admin Dashboard - Platform Management
+  if (isAdmin && userRole === 'admin') {
+    return <AdminGodDashboard />;
+  }
   const [newService, setNewService] = useState({ name: "", duration: "", price: "" });
   
   // ✅ Estados para modal de pagamento
@@ -1408,6 +1413,498 @@ const Admin = () => {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+// ✅ God Admin Dashboard - Platform Management
+const AdminGodDashboard = () => {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Fetch all barbershops for platform management
+  const { data: barbershops = [], refetch: refetchBarbershops } = useQuery({
+    queryKey: ['admin-barbershops'],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('barbershops')
+        .select(`
+          *,
+          subscription_plans (name, price, features)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching barbershops:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // Fetch subscription plans
+  const { data: plans = [] } = useQuery({
+    queryKey: ['subscription-plans'],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('subscription_plans')
+        .select('*')
+        .order('price');
+      
+      if (error) {
+        console.error('Error fetching plans:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // Fetch payment transactions
+  const { data: paymentTransactions = [] } = useQuery({
+    queryKey: ['payment-transactions'],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from('payment_transactions')
+        .select(`
+          *,
+          barbershops (name),
+          subscription_plans (name, price)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching payment transactions:', error);
+        return [];
+      }
+      return data;
+    }
+  });
+
+  // Calculate platform stats
+  const totalBarbershops = barbershops.length;
+  const activeBarbershops = barbershops.filter(b => b.subscription_status === 'active').length;
+  const trialBarbershops = barbershops.filter(b => b.subscription_status === 'trial').length;
+  const monthlyRevenue = paymentTransactions
+    .filter(t => {
+      const transactionDate = new Date(t.created_at);
+      const currentDate = new Date();
+      return transactionDate.getMonth() === currentDate.getMonth() && 
+             transactionDate.getFullYear() === currentDate.getFullYear() &&
+             t.status === 'paid';
+    })
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      trial: { label: "Trial", className: "bg-blue-500/20 text-blue-400" },
+      active: { label: "Ativo", className: "bg-green-500/20 text-green-400" },
+      inactive: { label: "Inativo", className: "bg-gray-500/20 text-gray-400" },
+      suspended: { label: "Suspenso", className: "bg-red-500/20 text-red-400" },
+    };
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.inactive;
+    return <Badge className={config.className}>{config.label}</Badge>;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Logout realizado com sucesso!");
+      navigate("/");
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error("Erro ao fazer logout");
+      navigate("/");
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-slate-900 to-slate-800">
+      {/* Header */}
+      <header className="bg-black/20 backdrop-blur-sm border-b border-purple-500/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center space-x-3">
+              <div className="bg-gradient-to-r from-purple-400 to-purple-600 p-2 rounded-lg">
+                <Crown className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">Admin SaaS Platform</h1>
+                <p className="text-purple-300 text-sm">Gestão Completa da Plataforma</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/')}
+                className="border-slate-500 text-slate-400 hover:bg-slate-500 hover:text-white"
+              >
+                Voltar ao Site
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Platform Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Total Barbearias</CardTitle>
+              <Building className="h-4 w-4 text-purple-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{totalBarbershops}</div>
+              <p className="text-xs text-gray-400">Cadastradas na plataforma</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Barbearias Ativas</CardTitle>
+              <Shield className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{activeBarbershops}</div>
+              <p className="text-xs text-gray-400">Com assinatura ativa</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Em Trial</CardTitle>
+              <Clock className="h-4 w-4 text-blue-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{trialBarbershops}</div>
+              <p className="text-xs text-gray-400">Período de teste</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Receita Mensal</CardTitle>
+              <DollarSign className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">R$ {monthlyRevenue.toFixed(2)}</div>
+              <p className="text-xs text-gray-400">Assinaturas pagas</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="barbearias" className="space-y-6">
+          <TabsList className="bg-slate-800/50 border border-slate-700">
+            <TabsTrigger value="barbearias" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+              <Building className="mr-2 h-4 w-4" />
+              Barbearias
+            </TabsTrigger>
+            <TabsTrigger value="planos" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+              <CreditCard className="mr-2 h-4 w-4" />
+              Planos
+            </TabsTrigger>
+            <TabsTrigger value="financeiro" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Financeiro
+            </TabsTrigger>
+            <TabsTrigger value="sistema" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+              <Settings className="mr-2 h-4 w-4" />
+              Sistema
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Barbearias Tab */}
+          <TabsContent value="barbearias">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Gestão de Barbearias</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Todas as barbearias cadastradas na plataforma
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-slate-700">
+                      <TableHead className="text-gray-400">Barbearia</TableHead>
+                      <TableHead className="text-gray-400">Proprietário</TableHead>
+                      <TableHead className="text-gray-400">Plano</TableHead>
+                      <TableHead className="text-gray-400">Status</TableHead>
+                      <TableHead className="text-gray-400">Cadastro</TableHead>
+                      <TableHead className="text-gray-400">Trial Expira</TableHead>
+                      <TableHead className="text-gray-400">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {barbershops.map((barbershop) => (
+                      <TableRow key={barbershop.id} className="border-slate-700">
+                        <TableCell>
+                          <div className="text-white font-medium">{barbershop.name}</div>
+                          <div className="text-gray-400 text-sm">{barbershop.email}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-gray-300">{barbershop.owner_name}</div>
+                          <div className="text-gray-400 text-sm">{barbershop.phone}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Badge className="bg-amber-500/20 text-amber-400">
+                              {barbershop.subscription_plans?.name || barbershop.plan_id}
+                            </Badge>
+                            <span className="text-gray-400 text-sm">
+                              R$ {barbershop.subscription_plans?.price || 0}/mês
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getStatusBadge(barbershop.subscription_status)}</TableCell>
+                        <TableCell className="text-gray-300">
+                          {new Date(barbershop.created_at).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {barbershop.trial_ends_at 
+                            ? new Date(barbershop.trial_ends_at).toLocaleDateString("pt-BR")
+                            : 'N/A'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-purple-500 text-purple-400 hover:bg-purple-500 hover:text-white"
+                            >
+                              Detalhes
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Planos Tab */}
+          <TabsContent value="planos">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Planos de Assinatura</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Gerencie os planos disponíveis na plataforma
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-6 md:grid-cols-3">
+                  {plans.map((plan) => (
+                    <Card key={plan.id} className="bg-slate-700/50 border-slate-600">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-white">{plan.name}</CardTitle>
+                          {plan.most_popular && (
+                            <Badge className="bg-amber-500/20 text-amber-400">Popular</Badge>
+                          )}
+                        </div>
+                        <div className="text-3xl font-bold text-purple-400">
+                          R$ {plan.price}
+                          <span className="text-lg text-gray-400">/mês</span>
+                        </div>
+                        <CardDescription className="text-gray-400">
+                          {plan.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Barbeiros:</span>
+                            <span className="text-white">
+                              {plan.features.barber_limit === -1 ? 'Ilimitado' : plan.features.barber_limit}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Clientes:</span>
+                            <span className="text-white">
+                              {plan.features.client_limit === -1 ? 'Ilimitado' : plan.features.client_limit}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Agendamentos:</span>
+                            <span className="text-white">
+                              {plan.features.appointment_limit === -1 ? 'Ilimitado' : plan.features.appointment_limit}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Relatórios:</span>
+                            <span className="text-white">
+                              {plan.features.financial_reports ? 'Sim' : 'Não'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">WhatsApp:</span>
+                            <span className="text-white">
+                              {plan.features.whatsapp_integration ? 'Sim' : 'Não'}
+                            </span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Financeiro Tab */}
+          <TabsContent value="financeiro">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white">Transações da Plataforma</CardTitle>
+                <CardDescription className="text-gray-400">
+                  Histórico de pagamentos das assinaturas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-slate-700">
+                      <TableHead className="text-gray-400">Barbearia</TableHead>
+                      <TableHead className="text-gray-400">Plano</TableHead>
+                      <TableHead className="text-gray-400">Valor</TableHead>
+                      <TableHead className="text-gray-400">Status</TableHead>
+                      <TableHead className="text-gray-400">Data</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paymentTransactions.map((transaction) => (
+                      <TableRow key={transaction.id} className="border-slate-700">
+                        <TableCell className="text-white">
+                          {transaction.barbershops?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {transaction.subscription_plans?.name || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-green-400 font-semibold">
+                          R$ {transaction.amount}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={
+                            transaction.status === 'paid' ? 'bg-green-500/20 text-green-400' :
+                            transaction.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-red-500/20 text-red-400'
+                          }>
+                            {transaction.status === 'paid' ? 'Pago' :
+                             transaction.status === 'pending' ? 'Pendente' : 'Falhou'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {new Date(transaction.created_at).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Sistema Tab */}
+          <TabsContent value="sistema">
+            <div className="grid gap-6">
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Status do Sistema</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Informações sobre a base de dados e sistema
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Base de Dados:</span>
+                      <Badge className="bg-blue-500/20 text-blue-400">
+                        {import.meta.env.VITE_USE_SUPABASE === 'true' ? 'Supabase' : 'LocalStorage'}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Versão:</span>
+                      <span className="text-white">1.0.0</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Ambiente:</span>
+                      <Badge className="bg-green-500/20 text-green-400">
+                        {import.meta.env.DEV ? 'Desenvolvimento' : 'Produção'}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-slate-800/50 border-slate-700">
+                <CardHeader>
+                  <CardTitle className="text-white">Ferramentas de Desenvolvimento</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Utilitários para gestão da base de dados
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button
+                      onClick={() => {
+                        if ((window as any).barbershopDb) {
+                          const info = (window as any).barbershopDb.getInfo();
+                          toast.success(`Base: ${info.type} - ${info.tables?.length || 0} tabelas`);
+                          console.log('Database info:', info);
+                        }
+                      }}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      Verificar Base de Dados
+                    </Button>
+                    
+                    <Button
+                      onClick={() => {
+                        if ((window as any).barbershopDb) {
+                          (window as any).barbershopDb.exportData();
+                          toast.success("Exportação iniciada!");
+                        }
+                      }}
+                      className="w-full bg-green-600 hover:bg-green-700"
+                    >
+                      Exportar Dados
+                    </Button>
+
+                    {import.meta.env.DEV && (
+                      <Button
+                        onClick={() => {
+                          if ((window as any).barbershopDb) {
+                            (window as any).barbershopDb.clearData();
+                            toast.success("Dados limpos!");
+                            refetchBarbershops();
+                          }
+                        }}
+                        variant="destructive"
+                        className="w-full"
+                      >
+                        Limpar Dados (DEV)
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

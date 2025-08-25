@@ -150,7 +150,7 @@ const AdminLogin = () => {
 
             {loginMethod === 'email' ? (
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-300">Email</Label>
+                <Label htmlFor="email" className="text-accessible-dark font-medium">Email</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -159,14 +159,14 @@ const AdminLogin = () => {
                     placeholder="Digite seu email"
                     value={credentials.email}
                     onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
-                    className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    className="pl-10 input-accessible min-h-[48px]"
                     required
                   />
                 </div>
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-gray-300">Telefone</Label>
+                <Label htmlFor="phone" className="text-accessible-dark font-medium">Telefone</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -175,7 +175,7 @@ const AdminLogin = () => {
                     placeholder="(11) 99999-0000"
                     value={credentials.phone}
                     onChange={handlePhoneChange}
-                    className="pl-10 bg-slate-700 border-slate-600 text-white"
+                    className="pl-10 input-accessible min-h-[48px]"
                     required
                   />
                 </div>
@@ -183,7 +183,7 @@ const AdminLogin = () => {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-300">Senha</Label>
+              <Label htmlFor="password" className="text-accessible-dark font-medium">Senha</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -192,7 +192,7 @@ const AdminLogin = () => {
                   placeholder="Digite sua senha"
                   value={credentials.password}
                   onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white"
+                  className="pl-10 input-accessible min-h-[48px]"
                   required
                 />
               </div>
@@ -201,22 +201,22 @@ const AdminLogin = () => {
             <Button 
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold"
+              className="w-full btn-primary-accessible font-semibold text-lg py-3 min-h-[48px]"
             >
               {loading ? "Entrando..." : "Entrar no Painel Admin"}
             </Button>
           </form>
           
           <div className="mt-6 text-center">
-            <p className="text-gray-400 text-sm mb-2">Para obter acesso de admin:</p>
-            <p className="text-gray-300 text-xs">Entre em contato com o administrador do sistema</p>
+            <p className="text-accessible-dark text-sm mb-2">Para obter acesso de admin:</p>
+            <p className="text-accessible-dark text-xs">Entre em contato com o administrador do sistema</p>
           </div>
           
           <div className="mt-4 text-center">
             <Button 
               variant="ghost" 
               onClick={() => navigate("/")}
-              className="text-amber-400 hover:text-amber-300"
+              className="link-accessible text-base py-2"
             >
               Voltar ao início
             </Button>
