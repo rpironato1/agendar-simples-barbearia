@@ -17,7 +17,7 @@ class MCPAutonomousTestProtocol {
       wcag_compliance: "AA",
       parallel_execution: true,
       self_healing: true,
-      base_url: "http://localhost:8081"
+      base_url: "http://localhost:8050"
     };
     
     this.viewports = [

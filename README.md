@@ -101,7 +101,7 @@ npx supabase db push
 npm run dev
 ```
 
-O sistema estará disponível em `http://localhost:5173`
+O sistema estará disponível em `http://localhost:8050`
 
 ## 📁 Estrutura do Projeto
 

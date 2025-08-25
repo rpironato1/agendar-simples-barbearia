@@ -74,11 +74,13 @@ npm run test:e2e:debug
    ```bash
    npm run dev
    ```
+   *Aplicação estará disponível em `http://localhost:8050`*
 
 2. **Run tests in another terminal**:
    ```bash
    npm run test:e2e
    ```
+   *Testes configurados para testar na porta 8050*
 
 ## 📊 Database Schema
 
