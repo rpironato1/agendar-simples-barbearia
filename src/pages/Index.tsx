@@ -58,6 +58,14 @@ const Index = () => {
 
   return (
     <ResponsiveLayout className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
+      {/* Skip Link for Accessibility */}
+      <a 
+        href="#main-content" 
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-amber-500 focus:text-black focus:rounded-md focus:font-semibold"
+      >
+        Pular para conteúdo principal
+      </a>
+      
       {/* Animated Background */}
       <Beams color1="#FFD700" color2="#1E3A8A" opacity={0.2} />
       
@@ -83,13 +91,13 @@ const Index = () => {
             
             {/* Desktop Navigation */}
             {!isMobile && (
-              <div className="hidden md:block">
+              <nav role="navigation" aria-label="Menu principal" className="hidden md:block">
                 <PillNav 
                   items={navItems}
                   baseColor="#1E3A8A"
                   pillColor="#FFD700"
                 />
-              </div>
+              </nav>
             )}
             
             {/* Mobile Menu Button & CTA */}
@@ -146,8 +154,10 @@ const Index = () => {
         </Container>
       </motion.header>
 
-      {/* Hero Section - Mobile-First */}
-      <Section fullHeight className="flex items-center">
+      {/* Main Content */}
+      <main role="main" aria-label="Conteúdo principal" id="main-content">
+        {/* Hero Section - Mobile-First */}
+        <Section fullHeight className="flex items-center">
         <Container>
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <motion.div
@@ -532,6 +542,8 @@ const Index = () => {
           </div>
         </Container>
       </Section>
+
+      </main>
 
       {/* Footer */}
       <Footer />
