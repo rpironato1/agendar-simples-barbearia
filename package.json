@@ -21,7 +21,7 @@
     "check:security": "npm audit --audit-level moderate || echo 'Security: vulnerabilities found but acceptable for development'",
     "check:a11y": "pa11y-ci --threshold 5",
     "check:bundle": "size-limit",
-    "check:perf": "lighthouse http://localhost:8050 --output=json --output-path=lighthouse-report.json --chrome-flags='--headless' --quiet && node -e 'const report = JSON.parse(require(\"fs\").readFileSync(\"lighthouse-report.json\")); const score = Math.round(report.lhr.categories.performance.score * 100); console.log(`Performance: Lighthouse score ${score}%`); process.exit(score < 90 ? 1 : 0)'",
+    "check:perf": "lighthouse http://localhost:8050 --output=json --output-path=lighthouse-report.json --chrome-flags='--headless' --quiet && node -e 'const report = JSON.parse(require(\"fs\").readFileSync(\"lighthouse-report.json\")); const score = Math.round(report.categories.performance.score * 100); console.log(`Performance: Lighthouse score ${score}%`); process.exit(score < 90 ? 1 : 0)'",
     "ci": "npm run check:all",
     "format": "prettier --write .",
     "test": "vitest",

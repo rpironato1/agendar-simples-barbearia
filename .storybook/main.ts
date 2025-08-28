@@ -1,29 +1,26 @@
-import type { StorybookConfig } from '@storybook/react-vite';
+import type { StorybookConfig } from "@storybook/react-vite";
 
 const config: StorybookConfig = {
-  "stories": [
-    "../src/**/*.mdx",
-    "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"
-  ],
-  "addons": [
+  stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
+  addons: [
     "@storybook/addon-docs",
     "@storybook/addon-onboarding",
     "@storybook/addon-essentials",
-    "@storybook/addon-a11y"
+    "@storybook/addon-a11y",
   ],
-  "framework": {
-    "name": "@storybook/react-vite",
-    "options": {}
+  framework: {
+    name: "@storybook/react-vite",
+    options: {},
   },
   viteFinal: (config) => {
     // Add support for path aliases
     if (config.resolve) {
       config.resolve.alias = {
         ...config.resolve.alias,
-        "@": "/src"
+        "@": "/src",
       };
     }
     return config;
-  }
+  },
 };
 export default config;

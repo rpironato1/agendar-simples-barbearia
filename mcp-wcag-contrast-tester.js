@@ -3,7 +3,7 @@
  * Direct implementation using MCP Playwright tools
  */
 
-const fs = require('fs');
+const fs = require("fs");
 
 // WCAG 2.1 Standards
 const WCAG_STANDARDS = {
@@ -11,12 +11,12 @@ const WCAG_STANDARDS = {
   AA_LARGE: 3.0,
   AAA_NORMAL: 7.0,
   AAA_LARGE: 4.5,
-  UI_COMPONENTS: 3.0
+  UI_COMPONENTS: 3.0,
 };
 
 // Color contrast calculation
 function calculateLuminance(r, g, b) {
-  const [rNorm, gNorm, bNorm] = [r, g, b].map(c => {
+  const [rNorm, gNorm, bNorm] = [r, g, b].map((c) => {
     c = c / 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   });
@@ -24,12 +24,16 @@ function calculateLuminance(r, g, b) {
 }
 
 function getContrastRatio(color1, color2) {
-  const [lum1, lum2] = [color1, color2].map(color => {
+  const [lum1, lum2] = [color1, color2].map((color) => {
     const rgb = color.match(/\d+/g);
     if (!rgb) return 0;
-    return calculateLuminance(parseInt(rgb[0]), parseInt(rgb[1]), parseInt(rgb[2]));
+    return calculateLuminance(
+      parseInt(rgb[0]),
+      parseInt(rgb[1]),
+      parseInt(rgb[2])
+    );
   });
-  
+
   const brightest = Math.max(lum1, lum2);
   const darkest = Math.min(lum1, lum2);
   return (brightest + 0.05) / (darkest + 0.05);
@@ -43,9 +47,9 @@ const contrastReport = {
     totalTests: 0,
     passed: 0,
     failed: 0,
-    warnings: 0
+    warnings: 0,
   },
-  issues: []
+  issues: [],
 };
 
 function addTestResult(page, element, colors, ratio, passed, required) {
@@ -56,12 +60,12 @@ function addTestResult(page, element, colors, ratio, passed, required) {
     ratio: parseFloat(ratio.toFixed(2)),
     passed,
     required,
-    standard: ratio >= WCAG_STANDARDS.AA_NORMAL ? 'AA+' : 'Below AA'
+    standard: ratio >= WCAG_STANDARDS.AA_NORMAL ? "AA+" : "Below AA",
   };
-  
+
   contrastReport.testResults.push(result);
   contrastReport.summary.totalTests++;
-  
+
   if (passed) {
     contrastReport.summary.passed++;
   } else {
@@ -72,14 +76,16 @@ function addTestResult(page, element, colors, ratio, passed, required) {
 
 // Save results
 function saveContrastReport() {
-  const reportPath = '/home/runner/work/agendar-simples-barbearia/agendar-simples-barbearia/screenshots/wcag-contrast-report.json';
+  const reportPath =
+    "/home/runner/work/agendar-simples-barbearia/agendar-simples-barbearia/screenshots/wcag-contrast-report.json";
   fs.writeFileSync(reportPath, JSON.stringify(contrastReport, null, 2));
-  
+
   // Generate markdown report
   const markdownReport = generateMarkdownReport();
-  const mdPath = '/home/runner/work/agendar-simples-barbearia/agendar-simples-barbearia/screenshots/WCAG-CONTRAST-REPORT.md';
+  const mdPath =
+    "/home/runner/work/agendar-simples-barbearia/agendar-simples-barbearia/screenshots/WCAG-CONTRAST-REPORT.md";
   fs.writeFileSync(mdPath, markdownReport);
-  
+
   console.log(`📊 Contrast report saved to ${reportPath}`);
   console.log(`📝 Markdown report saved to ${mdPath}`);
 }
@@ -87,7 +93,7 @@ function saveContrastReport() {
 function generateMarkdownReport() {
   const { summary, issues, testResults } = contrastReport;
   const passRate = ((summary.passed / summary.totalTests) * 100).toFixed(1);
-  
+
   return `# 🎨 WCAG 2.1 Contrast Compliance Report
 
 **Generated:** ${contrastReport.timestamp}
@@ -101,23 +107,27 @@ function generateMarkdownReport() {
 
 ## 🎯 Compliance Status
 
-${summary.failed === 0 ? '✅ **FULLY COMPLIANT** - All contrast ratios meet WCAG 2.1 AA standards!' : `❌ **${summary.failed} ISSUES FOUND** - See details below.`}
+${summary.failed === 0 ? "✅ **FULLY COMPLIANT** - All contrast ratios meet WCAG 2.1 AA standards!" : `❌ **${summary.failed} ISSUES FOUND** - See details below.`}
 
 ## 📋 Detailed Results
 
-${issues.length > 0 ? `### ❌ Failed Tests
+${
+  issues.length > 0
+    ? `### ❌ Failed Tests
 
 | Page | Element | Contrast Ratio | Required | Colors |
 |------|---------|----------------|----------|--------|
-${issues.map(issue => `| ${issue.page} | ${issue.element} | ${issue.ratio} | ${issue.required} | ${issue.colors.color} on ${issue.colors.backgroundColor} |`).join('\n')}
+${issues.map((issue) => `| ${issue.page} | ${issue.element} | ${issue.ratio} | ${issue.required} | ${issue.colors.color} on ${issue.colors.backgroundColor} |`).join("\n")}
 
-` : '### ✅ All Tests Passed\n\nNo contrast issues found!\n\n'}
+`
+    : "### ✅ All Tests Passed\n\nNo contrast issues found!\n\n"
+}
 
 ### 📈 All Test Results
 
 | Page | Element | Ratio | Status | Standard |
 |------|---------|-------|--------|----------|
-${testResults.map(result => `| ${result.page} | ${result.element} | ${result.ratio} | ${result.passed ? '✅' : '❌'} | ${result.standard} |`).join('\n')}
+${testResults.map((result) => `| ${result.page} | ${result.element} | ${result.ratio} | ${result.passed ? "✅" : "❌"} | ${result.standard} |`).join("\n")}
 
 ## 🏆 WCAG 2.1 Standards
 
@@ -129,21 +139,25 @@ ${testResults.map(result => `| ${result.page} | ${result.element} | ${result.rat
 
 ## 🔧 Recommendations
 
-${summary.failed > 0 ? `
+${
+  summary.failed > 0
+    ? `
 ### Immediate Actions Required:
-${issues.map(issue => `- **${issue.page} ${issue.element}**: Increase contrast from ${issue.ratio} to at least ${issue.required}`).join('\n')}
+${issues.map((issue) => `- **${issue.page} ${issue.element}**: Increase contrast from ${issue.ratio} to at least ${issue.required}`).join("\n")}
 
 ### General Improvements:
 - Consider using darker text colors or lighter backgrounds
 - Test with color blindness simulators
 - Implement focus indicators with sufficient contrast
 - Use patterns or icons alongside color coding
-` : `
+`
+    : `
 ### Excellent Work! 
 - All contrast ratios meet WCAG 2.1 AA standards
 - Consider AAA compliance for enhanced accessibility
 - Continue monitoring contrast when adding new components
-`}
+`
+}
 
 ---
 *Report generated by MCP Playwright WCAG Contrast Tester*`;
@@ -154,5 +168,5 @@ module.exports = {
   getContrastRatio,
   addTestResult,
   saveContrastReport,
-  contrastReport
+  contrastReport,
 };
