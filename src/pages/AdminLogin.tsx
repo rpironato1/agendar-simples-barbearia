@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,18 +12,18 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signIn, loading, user, isAdmin } = useAuth();
-  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [credentials, setCredentials] = useState({
     email: "",
     phone: "",
-    password: ""
+    password: "",
   });
 
   // Redirect if already logged in as admin
   useEffect(() => {
-    console.log('Admin check:', { user: user?.email, isAdmin });
+    console.log("Admin check:", { user: user?.email, isAdmin });
     if (user && isAdmin) {
-      console.log('Redirecting to admin...');
+      console.log("Redirecting to admin...");
       navigate("/admin");
     }
   }, [user, isAdmin, navigate]);
@@ -32,13 +31,13 @@ const AdminLogin = () => {
   const cleanupAuthState = () => {
     // Remove all Supabase auth keys from localStorage
     Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      if (key.startsWith("supabase.auth.") || key.includes("sb-")) {
         localStorage.removeItem(key);
       }
     });
     // Remove from sessionStorage if in use
     Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      if (key.startsWith("supabase.auth.") || key.includes("sb-")) {
         sessionStorage.removeItem(key);
       }
     });
@@ -46,57 +45,59 @@ const AdminLogin = () => {
 
   const formatPhone = (value: string) => {
     // Remove all non-numeric characters
-    const numbers = value.replace(/\D/g, '');
-    
+    const numbers = value.replace(/\D/g, "");
+
     // Apply mask (11) 99999-9999
     if (numbers.length <= 11) {
       return numbers
-        .replace(/(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{5})(\d)/, '$1-$2');
+        .replace(/(\d{2})(\d)/, "($1) $2")
+        .replace(/(\d{5})(\d)/, "$1-$2");
     }
     return value;
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value);
-    setCredentials(prev => ({ ...prev, phone: formatted }));
+    setCredentials((prev) => ({ ...prev, phone: formatted }));
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Clean up existing state
       cleanupAuthState();
-      
+
       // Use real email or create virtual one for phone
-      const loginEmail = loginMethod === 'phone' 
-        ? `phone-${credentials.phone.replace(/\D/g, '')}@barbershop.internal`
-        : credentials.email;
-      
-      console.log('Attempting login with:', loginEmail);
-      
+      const loginEmail =
+        loginMethod === "phone"
+          ? `phone-${credentials.phone.replace(/\D/g, "")}@barbershop.internal`
+          : credentials.email;
+
+      console.log("Attempting login with:", loginEmail);
+
       const { data, error } = await signIn(loginEmail, credentials.password);
-      
+
       if (error) {
-        console.error('Login error:', error);
+        console.error("Login error:", error);
         toast({
           title: "Erro no login",
-          description: error.message === "Invalid login credentials" 
-            ? "Credenciais inválidas. Verifique seu email/telefone e senha."
-            : error.message,
+          description:
+            error.message === "Invalid login credentials"
+              ? "Credenciais inválidas. Verifique seu email/telefone e senha."
+              : error.message,
           variant: "destructive",
         });
         return;
       }
 
       if (data.user) {
-        console.log('Login successful for user:', data.user.email);
+        console.log("Login successful for user:", data.user.email);
         toast({
           title: "Login realizado com sucesso!",
           description: "Bem-vindo ao painel administrativo.",
         });
-        
+
         // Wait a moment for auth state to update
         setTimeout(() => {
           // Redirect will be handled by the ProtectedRoute component
@@ -105,7 +106,7 @@ const AdminLogin = () => {
         }, 1000);
       }
     } catch (error) {
-      console.error('Login exception:', error);
+      console.error("Login exception:", error);
       toast({
         title: "Erro no login",
         description: "Ocorreu um erro inesperado.",
@@ -122,112 +123,145 @@ const AdminLogin = () => {
             <div className="bg-gradient-to-r from-amber-400 to-amber-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <Scissors className="h-8 w-8 text-black" />
             </div>
-            <h1 className="text-2xl text-white font-bold">Login Administrativo</h1>
-            <CardTitle className="text-xl text-white">Elite Barber - Admin</CardTitle>
+            <h1 className="text-2xl text-white font-bold">
+              Login Administrativo
+            </h1>
+            <CardTitle className="text-xl text-white">
+              Elite Barber - Admin
+            </CardTitle>
             <p className="text-gray-400">Acesso ao painel administrativo</p>
           </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            {/* Login Method Toggle */}
-            <div className="flex space-x-2 mb-4">
-              <Button
-                type="button"
-                variant={loginMethod === 'email' ? 'default' : 'outline'}
-                onClick={() => setLoginMethod('email')}
-                className="flex-1 text-sm"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Email
-              </Button>
-              <Button
-                type="button"
-                variant={loginMethod === 'phone' ? 'default' : 'outline'}
-                onClick={() => setLoginMethod('phone')}
-                className="flex-1 text-sm"
-              >
-                <Phone className="h-4 w-4 mr-2" />
-                Telefone
-              </Button>
-            </div>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              {/* Login Method Toggle */}
+              <div className="flex space-x-2 mb-4">
+                <Button
+                  type="button"
+                  variant={loginMethod === "email" ? "default" : "outline"}
+                  onClick={() => setLoginMethod("email")}
+                  className="flex-1 text-sm"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Email
+                </Button>
+                <Button
+                  type="button"
+                  variant={loginMethod === "phone" ? "default" : "outline"}
+                  onClick={() => setLoginMethod("phone")}
+                  className="flex-1 text-sm"
+                >
+                  <Phone className="h-4 w-4 mr-2" />
+                  Telefone
+                </Button>
+              </div>
 
-            {loginMethod === 'email' ? (
+              {loginMethod === "email" ? (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-accessible-dark font-medium"
+                  >
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Digite seu email"
+                      value={credentials.email}
+                      onChange={(e) =>
+                        setCredentials((prev) => ({
+                          ...prev,
+                          email: e.target.value,
+                        }))
+                      }
+                      className="pl-10 input-accessible min-h-[48px]"
+                      autoComplete="email"
+                      required
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="phone"
+                    className="text-accessible-dark font-medium"
+                  >
+                    Telefone
+                  </Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="(11) 99999-0000"
+                      value={credentials.phone}
+                      onChange={handlePhoneChange}
+                      className="pl-10 input-accessible min-h-[48px]"
+                      autoComplete="tel"
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-accessible-dark font-medium">Email</Label>
+                <Label
+                  htmlFor="password"
+                  className="text-accessible-dark font-medium"
+                >
+                  Senha
+                </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="Digite seu email"
-                    value={credentials.email}
-                    onChange={(e) => setCredentials(prev => ({ ...prev, email: e.target.value }))}
+                    id="password"
+                    type="password"
+                    placeholder="Digite sua senha"
+                    value={credentials.password}
+                    onChange={(e) =>
+                      setCredentials((prev) => ({
+                        ...prev,
+                        password: e.target.value,
+                      }))
+                    }
                     className="pl-10 input-accessible min-h-[48px]"
-                    autoComplete="email"
+                    autoComplete="current-password"
                     required
                   />
                 </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-accessible-dark font-medium">Telefone</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="(11) 99999-0000"
-                    value={credentials.phone}
-                    onChange={handlePhoneChange}
-                    className="pl-10 input-accessible min-h-[48px]"
-                    autoComplete="tel"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-accessible-dark font-medium">Senha</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={credentials.password}
-                  onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
-                  className="pl-10 input-accessible min-h-[48px]"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full btn-primary-accessible font-semibold text-lg py-3 min-h-[48px]"
+              >
+                {loading ? "Entrando..." : "Entrar no Painel Admin"}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-accessible-dark text-sm mb-2">
+                Para obter acesso de admin:
+              </p>
+              <p className="text-accessible-dark text-xs">
+                Entre em contato com o administrador do sistema
+              </p>
             </div>
 
-            <Button 
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary-accessible font-semibold text-lg py-3 min-h-[48px]"
-            >
-              {loading ? "Entrando..." : "Entrar no Painel Admin"}
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center">
-            <p className="text-accessible-dark text-sm mb-2">Para obter acesso de admin:</p>
-            <p className="text-accessible-dark text-xs">Entre em contato com o administrador do sistema</p>
-          </div>
-          
-          <div className="mt-4 text-center">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate("/")}
-              className="link-accessible text-base py-2"
-            >
-              Voltar ao início
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="mt-4 text-center">
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/")}
+                className="link-accessible text-base py-2"
+              >
+                Voltar ao início
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

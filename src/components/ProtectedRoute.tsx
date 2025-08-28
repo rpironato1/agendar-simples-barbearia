@@ -1,4 +1,3 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -8,10 +7,19 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
 }
 
-const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+const ProtectedRoute = ({
+  children,
+  requireAdmin = false,
+}: ProtectedRouteProps) => {
   const { user, isAdmin, loading, userRole } = useAuth();
 
-  console.log('ProtectedRoute check:', { user: user?.email, isAdmin, userRole, requireAdmin, loading });
+  console.log("ProtectedRoute check:", {
+    user: user?.email,
+    isAdmin,
+    userRole,
+    requireAdmin,
+    loading,
+  });
 
   if (loading) {
     return (
@@ -26,7 +34,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   }
 
   if (requireAdmin && !isAdmin) {
-    console.log('Access denied: not admin, role:', userRole);
+    console.log("Access denied: not admin, role:", userRole);
     return <Navigate to="/" replace />;
   }
 

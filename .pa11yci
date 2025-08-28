@@ -1,0 +1,20 @@
+{
+  "defaults": {
+    "timeout": 10000,
+    "wait": 2000,
+    "standard": "WCAG2AA",
+    "ignore": [
+      "notice",
+      "warning"
+    ],
+    "hideElements": [
+      ".skip-link"
+    ]
+  },
+  "urls": [
+    "http://localhost:8050/",
+    "http://localhost:8050/admin-login",
+    "http://localhost:8050/user-login",
+    "http://localhost:8050/barbershop-signup"
+  ]
+}

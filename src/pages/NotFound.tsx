@@ -16,9 +16,11 @@ const NotFound = () => {
       <main role="main" aria-label="Página não encontrada">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4 text-gray-900">404</h1>
-          <p className="text-xl text-gray-700 mb-4">Oops! Página não encontrada</p>
-          <a 
-            href="/" 
+          <p className="text-xl text-gray-700 mb-4">
+            Oops! Página não encontrada
+          </p>
+          <a
+            href="/"
             className="text-blue-700 hover:text-blue-900 underline font-medium"
             aria-label="Voltar para a página inicial"
           >

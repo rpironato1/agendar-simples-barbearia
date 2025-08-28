@@ -3,7 +3,7 @@
 // Argumentos para as ferramentas MCP
 export interface GetAppointmentsArgs {
   date?: string; // formato YYYY-MM-DD
-  status?: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status?: "pending" | "confirmed" | "cancelled" | "completed";
 }
 
 export interface GetClientsArgs {
@@ -11,7 +11,7 @@ export interface GetClientsArgs {
 }
 
 export interface GetFinancialDataArgs {
-  period: 'today' | 'week' | 'month' | 'year';
+  period: "today" | "week" | "month" | "year";
 }
 
 export interface GetServicesArgs {
@@ -26,7 +26,7 @@ export interface DeployStatusArgs {
 // Tipos de resposta MCP
 export interface McpResponse {
   content: Array<{
-    type: 'text';
+    type: "text";
     text: string;
   }>;
   isError?: boolean;
@@ -34,9 +34,9 @@ export interface McpResponse {
 
 // Tipos para componentes Admin
 export interface PaymentStatus {
-  status: 'pending' | 'partial' | 'paid';
+  status: "pending" | "partial" | "paid";
   amount: number;
-  method?: 'cash' | 'card' | 'pix';
+  method?: "cash" | "card" | "pix";
 }
 
 export interface AppointmentWithRelations {
@@ -46,7 +46,7 @@ export interface AppointmentWithRelations {
   barber_id: string | null;
   appointment_date: string;
   appointment_time: string;
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  status: "scheduled" | "confirmed" | "completed" | "cancelled";
   price: number | null;
   notes: string | null;
   created_at: string;

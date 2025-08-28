@@ -1,5 +1,5 @@
-import { motion, useInView, useSpring, useTransform } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { motion, useInView, useSpring, useTransform } from "framer-motion";
+import { useEffect, useRef } from "react";
 
 interface CountUpProps {
   to: number;
@@ -9,34 +9,34 @@ interface CountUpProps {
   className?: string;
 }
 
-export const CountUp = ({ 
-  to, 
-  duration = 2, 
-  suffix = '',
-  prefix = '',
-  className = ''
+export const CountUp = ({
+  to,
+  duration = 2,
+  suffix = "",
+  prefix = "",
+  className = "",
 }: CountUpProps) => {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
-  
+
   const spring = useSpring(0, {
     stiffness: 100,
     damping: 30,
-    restDelta: 0.001
+    restDelta: 0.001,
   });
-  
-  const display = useTransform(spring, current => {
+
+  const display = useTransform(spring, (current) => {
     const value = Math.floor(current);
     // Handle NaN or invalid values
     if (isNaN(value) || !isFinite(value)) {
-      return '0';
+      return "0";
     }
     return value.toLocaleString();
   });
 
   useEffect(() => {
     // Only start animation if value is valid and in view
-    if (isInView && to && typeof to === 'number' && !isNaN(to)) {
+    if (isInView && to && typeof to === "number" && !isNaN(to)) {
       spring.set(to);
     }
   }, [spring, to, isInView]);

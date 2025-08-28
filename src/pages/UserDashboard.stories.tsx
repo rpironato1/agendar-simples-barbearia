@@ -1,21 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import UserDashboard from './UserDashboard';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Meta, StoryObj } from "@storybook/react";
+import UserDashboard from "./UserDashboard";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
 // Mock user context
 const mockUser = {
-  id: '1',
-  email: 'user@example.com',
+  id: "1",
+  email: "user@example.com",
   user_metadata: {
-    name: 'João Silva'
-  }
+    name: "João Silva",
+  },
 };
 
 const meta: Meta<typeof UserDashboard> = {
-  title: 'Dashboards/UserDashboard',
+  title: "Dashboards/UserDashboard",
   component: UserDashboard,
   decorators: [
     (Story) => (
@@ -27,10 +27,11 @@ const meta: Meta<typeof UserDashboard> = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       description: {
-        component: 'Dashboard do usuário com landmark <main> e estrutura semântica implementados',
+        component:
+          "Dashboard do usuário com landmark <main> e estrutura semântica implementados",
       },
     },
   },
@@ -43,7 +44,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Dashboard principal do usuário com agendamentos, histórico e perfil',
+        story:
+          "Dashboard principal do usuário com agendamentos, histórico e perfil",
       },
     },
   },
