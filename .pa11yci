@@ -9,7 +9,14 @@
     ],
     "hideElements": [
       ".skip-link"
-    ]
+    ],
+    "chromeLaunchConfig": {
+      "args": [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu"
+      ]
+    }
   },
   "urls": [
     "http://localhost:8050/",
