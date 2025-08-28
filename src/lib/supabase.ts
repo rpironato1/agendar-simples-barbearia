@@ -1,14 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = "https://dikfrwaqwbtibasxdvie.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpa2Zyd2Fxd2J0aWJhc3hkdmllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MDI0MDksImV4cCI6MjA2NjM3ODQwOX0.iOOjd_rXKeDhYAMJuuRDQRP47rhthxLG_OlkCSaXmSA";
+const supabaseAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpa2Zyd2Fxd2J0aWJhc3hkdmllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4MDI0MDksImV4cCI6MjA2NjM3ODQwOX0.iOOjd_rXKeDhYAMJuuRDQRP47rhthxLG_OlkCSaXmSA";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+  },
 });
 
 // Types
@@ -20,7 +21,7 @@ export interface Client {
   accepts_whatsapp: boolean;
   total_spent: number;
   last_visit: string | null;
-  status: 'active' | 'blocked';
+  status: "active" | "blocked";
   created_at: string;
   updated_at: string;
 }
@@ -52,7 +53,7 @@ export interface Appointment {
   barber_id: string | null;
   appointment_date: string;
   appointment_time: string;
-  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  status: "scheduled" | "confirmed" | "completed" | "cancelled";
   price: number | null;
   notes: string | null;
   created_at: string;
@@ -88,7 +89,7 @@ export interface FinancialTransaction {
   amount: number;
   transaction_date: string;
   description: string | null;
-  type: 'income' | 'expense';
+  type: "income" | "expense";
   created_at: string;
   updated_at: string;
 }

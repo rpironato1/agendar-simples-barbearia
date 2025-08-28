@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { motion } from "framer-motion";
+import { useState } from "react";
 
 interface PillNavItem {
   label: string;
@@ -14,11 +14,11 @@ interface PillNavProps {
   className?: string;
 }
 
-export const PillNav = ({ 
-  items, 
-  baseColor = '#1E3A8A', 
-  pillColor = '#FFD700',
-  className = ''
+export const PillNav = ({
+  items,
+  baseColor = "#1E3A8A",
+  pillColor = "#FFD700",
+  className = "",
 }: PillNavProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -31,10 +31,7 @@ export const PillNav = ({
       style={{ backgroundColor: `${baseColor}20` }}
     >
       {items.map((item, index) => (
-        <motion.div
-          key={item.label}
-          className="relative"
-        >
+        <motion.div key={item.label} className="relative">
           {activeIndex === index && (
             <motion.div
               layoutId="pill"
@@ -53,8 +50,8 @@ export const PillNav = ({
               setActiveIndex(index);
             }}
             className="relative z-10 px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200"
-            style={{ 
-              color: activeIndex === index ? '#000' : '#fff'
+            style={{
+              color: activeIndex === index ? "#000" : "#fff",
             }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

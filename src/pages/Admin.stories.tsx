@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import Admin from './Admin';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Meta, StoryObj } from "@storybook/react";
+import Admin from "./Admin";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
 const meta: Meta<typeof Admin> = {
-  title: 'Dashboards/AdminDashboard',
+  title: "Dashboards/AdminDashboard",
   component: Admin,
   decorators: [
     (Story) => (
@@ -18,10 +18,11 @@ const meta: Meta<typeof Admin> = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       description: {
-        component: 'Dashboard administrativo com landmark <main> e estrutura semântica implementados',
+        component:
+          "Dashboard administrativo com landmark <main> e estrutura semântica implementados",
       },
     },
   },
@@ -34,7 +35,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Dashboard administrativo completo com gestão de agendamentos, barbeiros e pagamentos',
+        story:
+          "Dashboard administrativo completo com gestão de agendamentos, barbeiros e pagamentos",
       },
     },
   },

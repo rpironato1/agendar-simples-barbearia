@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
+import { motion } from "framer-motion";
+import { useRef, useEffect, useState } from "react";
 
 interface SpotlightCardProps {
   children: React.ReactNode;
@@ -7,10 +7,10 @@ interface SpotlightCardProps {
   className?: string;
 }
 
-export const SpotlightCard = ({ 
-  children, 
-  spotlightColor = 'rgba(255, 215, 0, 0.3)',
-  className = ''
+export const SpotlightCard = ({
+  children,
+  spotlightColor = "rgba(255, 215, 0, 0.3)",
+  className = "",
 }: SpotlightCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -31,14 +31,14 @@ export const SpotlightCard = ({
     const handleMouseEnter = () => setIsHovered(true);
     const handleMouseLeave = () => setIsHovered(false);
 
-    card.addEventListener('mousemove', handleMouseMove);
-    card.addEventListener('mouseenter', handleMouseEnter);
-    card.addEventListener('mouseleave', handleMouseLeave);
+    card.addEventListener("mousemove", handleMouseMove);
+    card.addEventListener("mouseenter", handleMouseEnter);
+    card.addEventListener("mouseleave", handleMouseLeave);
 
     return () => {
-      card.removeEventListener('mousemove', handleMouseMove);
-      card.removeEventListener('mouseenter', handleMouseEnter);
-      card.removeEventListener('mouseleave', handleMouseLeave);
+      card.removeEventListener("mousemove", handleMouseMove);
+      card.removeEventListener("mouseenter", handleMouseEnter);
+      card.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, []);
 
@@ -62,7 +62,7 @@ export const SpotlightCard = ({
             width: 200,
             height: 200,
             background: `radial-gradient(circle, ${spotlightColor} 0%, transparent 70%)`,
-            filter: 'blur(1px)',
+            filter: "blur(1px)",
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -70,11 +70,9 @@ export const SpotlightCard = ({
           transition={{ duration: 0.2 }}
         />
       )}
-      
+
       {/* Content */}
-      <div className="relative z-10">
-        {children}
-      </div>
+      <div className="relative z-10">{children}</div>
     </motion.div>
   );
 };

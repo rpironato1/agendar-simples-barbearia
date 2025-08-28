@@ -1,34 +1,37 @@
 // Platform-agnostic utility functions
-import { BREAKPOINTS } from './constants';
-import type { DeviceInfo, ValidationResult } from './types';
+import { BREAKPOINTS } from "./constants";
+import type { DeviceInfo, ValidationResult } from "./types";
 
 // Device detection utilities
 export const getDeviceInfo = (): DeviceInfo => {
-  const width = typeof window !== 'undefined' ? window.innerWidth : 375;
-  const height = typeof window !== 'undefined' ? window.innerHeight : 667;
-  
+  const width = typeof window !== "undefined" ? window.innerWidth : 375;
+  const height = typeof window !== "undefined" ? window.innerHeight : 667;
+
   return {
-    platform: 'web', // Can be overridden in React Native
+    platform: "web", // Can be overridden in React Native
     isTablet: width >= BREAKPOINTS.tablet && width < BREAKPOINTS.desktop,
     isMobile: width < BREAKPOINTS.tablet,
     screenWidth: width,
-    screenHeight: height
+    screenHeight: height,
   };
 };
 
 // Responsive utility functions
 export const isMobile = (width?: number): boolean => {
-  const screenWidth = width || (typeof window !== 'undefined' ? window.innerWidth : 375);
+  const screenWidth =
+    width || (typeof window !== "undefined" ? window.innerWidth : 375);
   return screenWidth < BREAKPOINTS.tablet;
 };
 
 export const isTablet = (width?: number): boolean => {
-  const screenWidth = width || (typeof window !== 'undefined' ? window.innerWidth : 768);
+  const screenWidth =
+    width || (typeof window !== "undefined" ? window.innerWidth : 768);
   return screenWidth >= BREAKPOINTS.tablet && screenWidth < BREAKPOINTS.desktop;
 };
 
 export const isDesktop = (width?: number): boolean => {
-  const screenWidth = width || (typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const screenWidth =
+    width || (typeof window !== "undefined" ? window.innerWidth : 1024);
   return screenWidth >= BREAKPOINTS.desktop;
 };
 
@@ -45,33 +48,33 @@ export const validatePhone = (phone: string): boolean => {
 
 export const validatePassword = (password: string): ValidationResult => {
   const errors: Record<string, string> = {};
-  
+
   if (password.length < 8) {
-    errors.length = 'Senha deve ter pelo menos 8 caracteres';
+    errors.length = "Senha deve ter pelo menos 8 caracteres";
   }
-  
+
   if (!/[A-Z]/.test(password)) {
-    errors.uppercase = 'Senha deve conter pelo menos uma letra maiúscula';
+    errors.uppercase = "Senha deve conter pelo menos uma letra maiúscula";
   }
-  
+
   if (!/[a-z]/.test(password)) {
-    errors.lowercase = 'Senha deve conter pelo menos uma letra minúscula';
+    errors.lowercase = "Senha deve conter pelo menos uma letra minúscula";
   }
-  
+
   if (!/\d/.test(password)) {
-    errors.number = 'Senha deve conter pelo menos um número';
+    errors.number = "Senha deve conter pelo menos um número";
   }
-  
+
   return {
     isValid: Object.keys(errors).length === 0,
-    errors
+    errors,
   };
 };
 
 // Date utilities
 export const formatDate = (date: string | Date): string => {
   const d = new Date(date);
-  return d.toLocaleDateString('pt-BR');
+  return d.toLocaleDateString("pt-BR");
 };
 
 export const formatTime = (time: string): string => {
@@ -80,7 +83,7 @@ export const formatTime = (time: string): string => {
 
 export const formatDateTime = (date: string | Date): string => {
   const d = new Date(date);
-  return d.toLocaleString('pt-BR');
+  return d.toLocaleString("pt-BR");
 };
 
 export const isTimeSlotAvailable = (
@@ -88,24 +91,24 @@ export const isTimeSlotAvailable = (
   bookedSlots: string[],
   duration: number
 ): boolean => {
-  const [hours, minutes] = time.split(':').map(Number);
+  const [hours, minutes] = time.split(":").map(Number);
   const startTime = hours * 60 + minutes;
   const endTime = startTime + duration;
-  
-  return !bookedSlots.some(bookedTime => {
-    const [bookedHours, bookedMinutes] = bookedTime.split(':').map(Number);
+
+  return !bookedSlots.some((bookedTime) => {
+    const [bookedHours, bookedMinutes] = bookedTime.split(":").map(Number);
     const bookedStart = bookedHours * 60 + bookedMinutes;
     const bookedEnd = bookedStart + duration; // Assuming same duration
-    
-    return (startTime < bookedEnd && endTime > bookedStart);
+
+    return startTime < bookedEnd && endTime > bookedStart;
   });
 };
 
 // Currency utilities
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
   }).format(amount);
 };
 
@@ -117,29 +120,36 @@ export const capitalize = (str: string): string => {
 export const slugify = (str: string): string => {
   return str
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 };
 
 // Array utilities
 export const groupBy = <T>(array: T[], key: keyof T): Record<string, T[]> => {
-  return array.reduce((groups, item) => {
-    const group = String(item[key]);
-    groups[group] = groups[group] || [];
-    groups[group].push(item);
-    return groups;
-  }, {} as Record<string, T[]>);
+  return array.reduce(
+    (groups, item) => {
+      const group = String(item[key]);
+      groups[group] = groups[group] || [];
+      groups[group].push(item);
+      return groups;
+    },
+    {} as Record<string, T[]>
+  );
 };
 
-export const sortBy = <T>(array: T[], key: keyof T, direction: 'asc' | 'desc' = 'asc'): T[] => {
+export const sortBy = <T>(
+  array: T[],
+  key: keyof T,
+  direction: "asc" | "desc" = "asc"
+): T[] => {
   return [...array].sort((a, b) => {
     const aVal = a[key];
     const bVal = b[key];
-    
-    if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-    if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+
+    if (aVal < bVal) return direction === "asc" ? -1 : 1;
+    if (aVal > bVal) return direction === "asc" ? 1 : -1;
     return 0;
   });
 };
@@ -147,29 +157,29 @@ export const sortBy = <T>(array: T[], key: keyof T, direction: 'asc' | 'desc' = 
 // Storage utilities (platform-agnostic)
 export const storage = {
   get: (key: string): string | null => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     return localStorage.getItem(key);
   },
-  
+
   set: (key: string, value: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     localStorage.setItem(key, value);
   },
-  
+
   remove: (key: string): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     localStorage.removeItem(key);
   },
-  
+
   clear: (): void => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     localStorage.clear();
-  }
+  },
 };
 
 // Async utilities
 export const delay = (ms: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 export const retry = async <T>(
@@ -194,7 +204,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   wait: number
 ): ((...args: Parameters<T>) => void) => {
   let timeout: NodeJS.Timeout;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
@@ -206,12 +216,12 @@ export const throttle = <T extends (...args: any[]) => any>(
   limit: number
 ): ((...args: Parameters<T>) => void) => {
   let inThrottle: boolean;
-  
+
   return (...args: Parameters<T>) => {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+      setTimeout(() => (inThrottle = false), limit);
     }
   };
 };

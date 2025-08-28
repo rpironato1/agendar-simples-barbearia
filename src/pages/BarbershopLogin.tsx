@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -26,9 +32,11 @@ const BarbershopLogin = () => {
 
     try {
       const { data, error } = await signIn(email, password);
-      
+
       if (error) {
-        setError(error.message || "Erro ao fazer login. Verifique suas credenciais.");
+        setError(
+          error.message || "Erro ao fazer login. Verifique suas credenciais."
+        );
         toast.error(error.message || "Erro ao fazer login");
         return;
       }
@@ -38,7 +46,7 @@ const BarbershopLogin = () => {
         navigate("/barbershop-dashboard");
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error("Login error:", err);
       setError("Erro inesperado. Tente novamente.");
       toast.error("Erro inesperado. Tente novamente.");
     } finally {
@@ -162,8 +170,8 @@ const BarbershopLogin = () => {
             <div className="text-center">
               <p className="text-gray-500 text-xs">
                 Problemas para acessar?{" "}
-                <Link 
-                  to="/contact" 
+                <Link
+                  to="/contact"
                   className="text-amber-400 hover:text-amber-300 underline"
                 >
                   Entre em contato
@@ -180,8 +188,12 @@ const BarbershopLogin = () => {
               🧪 Credenciais de Demonstração
             </h3>
             <div className="space-y-1 text-sm text-gray-300">
-              <p><strong>Email:</strong> barbershop@demo.com</p>
-              <p><strong>Senha:</strong> demo123</p>
+              <p>
+                <strong>Email:</strong> barbershop@demo.com
+              </p>
+              <p>
+                <strong>Senha:</strong> demo123
+              </p>
             </div>
             <p className="text-blue-400 text-xs mt-2">
               Use estas credenciais para explorar o painel da barbearia

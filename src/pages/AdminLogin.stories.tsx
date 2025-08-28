@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import AdminLogin from './AdminLogin';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Meta, StoryObj } from "@storybook/react";
+import AdminLogin from "./AdminLogin";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
 const meta: Meta<typeof AdminLogin> = {
-  title: 'Pages/AdminLogin',
+  title: "Pages/AdminLogin",
   component: AdminLogin,
   decorators: [
     (Story) => (
@@ -18,10 +18,11 @@ const meta: Meta<typeof AdminLogin> = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       description: {
-        component: 'Página de login administrativo com H1 e landmark <main> implementados',
+        component:
+          "Página de login administrativo com H1 e landmark <main> implementados",
       },
     },
   },
@@ -34,7 +35,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Formulário de login administrativo com melhorias de acessibilidade',
+        story:
+          "Formulário de login administrativo com melhorias de acessibilidade",
       },
     },
   },

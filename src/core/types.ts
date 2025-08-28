@@ -4,7 +4,7 @@ export interface User {
   email: string;
   name: string;
   phone?: string;
-  role: 'client' | 'barbershop' | 'admin';
+  role: "client" | "barbershop" | "admin";
   barbershopId?: string;
   createdAt: string;
   updatedAt: string;
@@ -21,8 +21,8 @@ export interface Barbershop {
     state: string;
     zipCode: string;
   };
-  subscriptionPlan: 'basic' | 'premium' | 'enterprise';
-  subscriptionStatus: 'active' | 'cancelled' | 'trial';
+  subscriptionPlan: "basic" | "premium" | "enterprise";
+  subscriptionStatus: "active" | "cancelled" | "trial";
   subscriptionExpiresAt: string;
   settings: {
     workingHours: {
@@ -41,7 +41,7 @@ export interface Service {
   description: string;
   duration: number; // in minutes
   price: number;
-  category: 'hair' | 'beard' | 'combo' | 'extras';
+  category: "hair" | "beard" | "combo" | "extras";
   barbershopId: string;
   isActive: boolean;
   createdAt: string;
@@ -68,7 +68,7 @@ export interface Booking {
   serviceId: string;
   date: string; // ISO date string
   time: string; // HH:MM format
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: "pending" | "confirmed" | "cancelled" | "completed";
   notes?: string;
   totalPrice: number;
   createdAt: string;
@@ -80,8 +80,8 @@ export interface Payment {
   bookingId: string;
   barbershopId: string;
   amount: number;
-  method: 'cash' | 'card' | 'pix' | 'other';
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  method: "cash" | "card" | "pix" | "other";
+  status: "pending" | "completed" | "failed" | "refunded";
   processedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -95,7 +95,7 @@ export interface TouchEvent {
 }
 
 export interface DeviceInfo {
-  platform: 'web' | 'ios' | 'android';
+  platform: "web" | "ios" | "android";
   isTablet: boolean;
   isMobile: boolean;
   screenWidth: number;
@@ -131,7 +131,7 @@ export interface NavigationRoute {
   path: string;
   component: React.ComponentType;
   requiresAuth?: boolean;
-  roles?: User['role'][];
+  roles?: User["role"][];
 }
 
 // State management types
@@ -168,8 +168,8 @@ export interface FormFieldProps extends BaseComponentProps {
 }
 
 export interface ButtonProps extends BaseComponentProps {
-  variant: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size: 'sm' | 'md' | 'lg';
+  variant: "primary" | "secondary" | "outline" | "ghost";
+  size: "sm" | "md" | "lg";
   loading?: boolean;
   children: React.ReactNode;
 }

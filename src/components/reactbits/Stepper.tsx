@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { motion } from "framer-motion";
+import { useState } from "react";
 
 interface StepProps {
   children: React.ReactNode;
@@ -27,26 +27,26 @@ const Step = ({ children, isActive, isCompleted, stepNumber }: StepProps) => {
       {/* Step indicator */}
       <motion.div
         className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 ${
-          isCompleted 
-            ? 'bg-green-500 border-green-500 text-white' 
-            : isActive 
-              ? 'bg-amber-500 border-amber-500 text-black' 
-              : 'bg-transparent border-gray-400 text-gray-400'
+          isCompleted
+            ? "bg-green-500 border-green-500 text-white"
+            : isActive
+              ? "bg-amber-500 border-amber-500 text-black"
+              : "bg-transparent border-gray-400 text-gray-400"
         }`}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
-        {isCompleted ? '✓' : stepNumber}
+        {isCompleted ? "✓" : stepNumber}
       </motion.div>
-      
+
       {/* Step content */}
       <motion.div
         className={`flex-1 transition-colors duration-300 ${
-          isActive ? 'text-white' : 'text-gray-400'
+          isActive ? "text-white" : "text-gray-400"
         }`}
-        animate={{ 
+        animate={{
           opacity: isActive ? 1 : 0.6,
-          scale: isActive ? 1.02 : 1
+          scale: isActive ? 1.02 : 1,
         }}
         transition={{ duration: 0.3 }}
       >
@@ -56,12 +56,12 @@ const Step = ({ children, isActive, isCompleted, stepNumber }: StepProps) => {
   );
 };
 
-export const Stepper = ({ 
-  initialStep = 1, 
-  stepIndicatorColor = '#FFD700',
-  activeStepColor = '#1E3A8A',
+export const Stepper = ({
+  initialStep = 1,
+  stepIndicatorColor = "#FFD700",
+  activeStepColor = "#1E3A8A",
   children,
-  className = ''
+  className = "",
 }: StepperProps) => {
   const [currentStep, setCurrentStep] = useState(initialStep);
 
@@ -101,7 +101,7 @@ export const Stepper = ({
           );
         })}
       </div>
-      
+
       {/* Navigation */}
       <div className="flex justify-between pt-4">
         <motion.button
@@ -113,7 +113,7 @@ export const Stepper = ({
         >
           Anterior
         </motion.button>
-        
+
         <motion.button
           onClick={nextStep}
           disabled={currentStep === children.length}

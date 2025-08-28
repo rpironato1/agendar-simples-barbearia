@@ -1,0 +1,12 @@
+[
+  {
+    "path": "dist/assets/index*.js",
+    "limit": "500 KB",
+    "name": "JS Bundle"
+  },
+  {
+    "path": "dist/assets/index*.css",
+    "limit": "100 KB",
+    "name": "CSS Bundle"
+  }
+]

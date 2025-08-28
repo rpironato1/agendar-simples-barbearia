@@ -3,18 +3,22 @@
  * Allows testing with localStorage and easy migration to Supabase
  */
 
-import { supabase } from './supabase';
-import { localDb, createLocalClient } from './localStorage';
+import { supabase } from "./supabase";
+import { localDb, createLocalClient } from "./localStorage";
 
 // Environment variable to control database type
-const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
+const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === "true";
 
 // Interface that both implementations must follow
 export interface DatabaseClient {
   from(table: string): any;
   auth: any;
   rpc(functionName: string, params: any): Promise<any>;
-  setContext?(barbershopId: string | null, userId: string | null, userRole: string | null): void;
+  setContext?(
+    barbershopId: string | null,
+    userId: string | null,
+    userRole: string | null
+  ): void;
 }
 
 class DatabaseAdapter {
@@ -22,10 +26,10 @@ class DatabaseAdapter {
 
   constructor() {
     if (USE_SUPABASE) {
-      console.log('🟢 Using Supabase database');
+      console.log("🟢 Using Supabase database");
       this.client = supabase;
     } else {
-      console.log('🟡 Using localStorage database (test mode)');
+      console.log("🟡 Using localStorage database (test mode)");
       this.client = createLocalClient();
     }
   }
@@ -44,7 +48,11 @@ class DatabaseAdapter {
   }
 
   // Set context for multitenancy (only works with localStorage)
-  setContext(barbershopId: string | null, userId: string | null, userRole: string | null) {
+  setContext(
+    barbershopId: string | null,
+    userId: string | null,
+    userRole: string | null
+  ) {
     if (this.client.setContext) {
       this.client.setContext(barbershopId, userId, userRole);
     }
@@ -53,27 +61,27 @@ class DatabaseAdapter {
   // Migration utilities
   async migrateToSupabase() {
     if (USE_SUPABASE) {
-      console.log('Already using Supabase');
+      console.log("Already using Supabase");
       return;
     }
 
-    console.log('🔄 Starting migration from localStorage to Supabase...');
-    
+    console.log("🔄 Starting migration from localStorage to Supabase...");
+
     const tables = [
-      'subscription_plans',
-      'barbershops', 
-      'barbershop_users',
-      'user_roles',
-      'profiles',
-      'clients',
-      'services',
-      'barbers', 
-      'appointments',
-      'financial_transactions',
-      'payment_transactions',
-      'cost_items',
-      'cost_records',
-      'promotions'
+      "subscription_plans",
+      "barbershops",
+      "barbershop_users",
+      "user_roles",
+      "profiles",
+      "clients",
+      "services",
+      "barbers",
+      "appointments",
+      "financial_transactions",
+      "payment_transactions",
+      "cost_items",
+      "cost_records",
+      "promotions",
     ];
 
     for (const table of tables) {
@@ -83,12 +91,10 @@ class DatabaseAdapter {
           const data = JSON.parse(localData);
           if (data.length > 0) {
             console.log(`Migrating ${data.length} records from ${table}...`);
-            
+
             // Insert data to Supabase
-            const { error } = await supabase
-              .from(table)
-              .insert(data);
-            
+            const { error } = await supabase.from(table).insert(data);
+
             if (error) {
               console.error(`Error migrating ${table}:`, error);
             } else {
@@ -101,32 +107,32 @@ class DatabaseAdapter {
       }
     }
 
-    console.log('🔄 Migration completed!');
+    console.log("🔄 Migration completed!");
   }
 
   async exportData() {
     const tables = [
-      'subscription_plans',
-      'barbershops', 
-      'barbershop_users',
-      'user_roles',
-      'profiles',
-      'clients',
-      'services',
-      'barbers', 
-      'appointments',
-      'financial_transactions',
-      'payment_transactions',
-      'cost_items',
-      'cost_records',
-      'promotions'
+      "subscription_plans",
+      "barbershops",
+      "barbershop_users",
+      "user_roles",
+      "profiles",
+      "clients",
+      "services",
+      "barbers",
+      "appointments",
+      "financial_transactions",
+      "payment_transactions",
+      "cost_items",
+      "cost_records",
+      "promotions",
     ];
 
     const exportData: Record<string, any[]> = {};
 
     for (const table of tables) {
       if (USE_SUPABASE) {
-        const { data } = await supabase.from(table).select('*');
+        const { data } = await supabase.from(table).select("*");
         exportData[table] = data || [];
       } else {
         const localData = localStorage.getItem(`barbershop_db_${table}`);
@@ -135,11 +141,13 @@ class DatabaseAdapter {
     }
 
     // Create downloadable JSON file
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `barbershop-data-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `barbershop-data-export-${new Date().toISOString().split("T")[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -156,17 +164,20 @@ class DatabaseAdapter {
         const tableData = data[table];
         if (tableData && tableData.length > 0) {
           console.log(`Importing ${tableData.length} records to ${table}...`);
-          
+
           if (USE_SUPABASE) {
             // Clear existing data
-            await supabase.from(table).delete().neq('id', '');
+            await supabase.from(table).delete().neq("id", "");
             // Insert new data
             const { error } = await supabase.from(table).insert(tableData);
             if (error) throw error;
           } else {
-            localStorage.setItem(`barbershop_db_${table}`, JSON.stringify(tableData));
+            localStorage.setItem(
+              `barbershop_db_${table}`,
+              JSON.stringify(tableData)
+            );
           }
-          
+
           console.log(`✅ Successfully imported ${table}`);
         }
       } catch (error) {
@@ -174,43 +185,50 @@ class DatabaseAdapter {
       }
     }
 
-    console.log('✅ Import completed!');
+    console.log("✅ Import completed!");
   }
 
   // Development utilities
   clearAllData() {
     if (USE_SUPABASE) {
-      console.warn('Cannot clear Supabase data from client. Use Supabase dashboard.');
+      console.warn(
+        "Cannot clear Supabase data from client. Use Supabase dashboard."
+      );
       return;
     }
 
-    const keys = Object.keys(localStorage).filter(key => key.startsWith('barbershop_db_'));
-    keys.forEach(key => localStorage.removeItem(key));
-    
+    const keys = Object.keys(localStorage).filter((key) =>
+      key.startsWith("barbershop_db_")
+    );
+    keys.forEach((key) => localStorage.removeItem(key));
+
     // Reinitialize
     localDb.constructor();
-    
-    console.log('🗑️ All localStorage data cleared and reinitialized');
+
+    console.log("🗑️ All localStorage data cleared and reinitialized");
   }
 
   getStorageInfo() {
     if (USE_SUPABASE) {
-      return { type: 'Supabase', url: 'https://dikfrwaqwbtibasxdvie.supabase.co' };
+      return {
+        type: "Supabase",
+        url: "https://dikfrwaqwbtibasxdvie.supabase.co",
+      };
     } else {
       const tables = Object.keys(localStorage)
-        .filter(key => key.startsWith('barbershop_db_'))
-        .map(key => {
-          const data = JSON.parse(localStorage.getItem(key) || '[]');
+        .filter((key) => key.startsWith("barbershop_db_"))
+        .map((key) => {
+          const data = JSON.parse(localStorage.getItem(key) || "[]");
           return {
-            table: key.replace('barbershop_db_', ''),
-            records: data.length
+            table: key.replace("barbershop_db_", ""),
+            records: data.length,
           };
         });
-      
-      return { 
-        type: 'localStorage', 
+
+      return {
+        type: "localStorage",
         tables,
-        totalSize: new Blob([JSON.stringify(localStorage)]).size + ' bytes'
+        totalSize: new Blob([JSON.stringify(localStorage)]).size + " bytes",
       };
     }
   }
@@ -220,8 +238,8 @@ class DatabaseAdapter {
 export const db = new DatabaseAdapter();
 
 // Export for backward compatibility
-export { supabase } from './supabase';
-export * from './supabase';
+export { supabase } from "./supabase";
+export * from "./supabase";
 
 // Development helper - expose on window in dev mode
 if (import.meta.env.DEV) {
@@ -230,6 +248,6 @@ if (import.meta.env.DEV) {
     migrateToSupabase: () => db.migrateToSupabase(),
     exportData: () => db.exportData(),
     clearData: () => db.clearAllData(),
-    getInfo: () => db.getStorageInfo()
+    getInfo: () => db.getStorageInfo(),
   };
 }

@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
 interface BeamsProps {
   color1?: string;
@@ -8,11 +8,11 @@ interface BeamsProps {
   className?: string;
 }
 
-export const Beams = ({ 
-  color1 = '#FFD700', 
-  color2 = '#1E3A8A', 
+export const Beams = ({
+  color1 = "#FFD700",
+  color2 = "#1E3A8A",
   opacity = 0.3,
-  className = ''
+  className = "",
 }: BeamsProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -20,7 +20,7 @@ export const Beams = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resizeCanvas = () => {
@@ -29,28 +29,43 @@ export const Beams = ({
     };
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener("resize", resizeCanvas);
 
     let animationId: number;
     let time = 0;
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       // Create gradient
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, `${color1}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
-      gradient.addColorStop(1, `${color2}${Math.floor(opacity * 255).toString(16).padStart(2, '0')}`);
+      const gradient = ctx.createLinearGradient(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+      gradient.addColorStop(
+        0,
+        `${color1}${Math.floor(opacity * 255)
+          .toString(16)
+          .padStart(2, "0")}`
+      );
+      gradient.addColorStop(
+        1,
+        `${color2}${Math.floor(opacity * 255)
+          .toString(16)
+          .padStart(2, "0")}`
+      );
 
       // Draw animated beams
       for (let i = 0; i < 5; i++) {
         const x = (canvas.width / 5) * i + Math.sin(time + i) * 50;
         const y = Math.cos(time + i * 0.5) * 30;
-        
+
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(Math.sin(time + i) * 0.1);
-        
+
         ctx.fillStyle = gradient;
         ctx.fillRect(-2, 0, 4, canvas.height);
         ctx.restore();
@@ -63,7 +78,7 @@ export const Beams = ({
     animate();
 
     return () => {
-      window.removeEventListener('resize', resizeCanvas);
+      window.removeEventListener("resize", resizeCanvas);
       cancelAnimationFrame(animationId);
     };
   }, [color1, color2, opacity]);
@@ -78,7 +93,7 @@ export const Beams = ({
       <canvas
         ref={canvasRef}
         className="w-full h-full"
-        style={{ filter: 'blur(1px)' }}
+        style={{ filter: "blur(1px)" }}
       />
     </motion.div>
   );

@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 interface GlassSurfaceProps {
   children: React.ReactNode;
@@ -7,11 +7,11 @@ interface GlassSurfaceProps {
   className?: string;
 }
 
-export const GlassSurface = ({ 
-  children, 
+export const GlassSurface = ({
+  children,
   borderRadius = 20,
   backgroundOpacity = 0.1,
-  className = ''
+  className = "",
 }: GlassSurfaceProps) => {
   return (
     <motion.div
@@ -39,22 +39,20 @@ export const GlassSurface = ({
           borderRadius: `${borderRadius}px`,
           background: `linear-gradient(135deg, 
             rgba(255, 255, 255, 0.2) 0%, 
-            transparent 50%)`
+            transparent 50%)`,
         }}
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 1, 0] }}
-        transition={{ 
-          duration: 2, 
-          repeat: Infinity, 
+        transition={{
+          duration: 2,
+          repeat: Infinity,
           repeatDelay: 3,
-          ease: "easeInOut"
+          ease: "easeInOut",
         }}
       />
-      
+
       {/* Content */}
-      <div className="relative z-10">
-        {children}
-      </div>
+      <div className="relative z-10">{children}</div>
     </motion.div>
   );
 };

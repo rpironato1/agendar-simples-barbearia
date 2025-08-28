@@ -1,12 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import BarbershopSignup from './BarbershopSignup';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { Meta, StoryObj } from "@storybook/react";
+import BarbershopSignup from "./BarbershopSignup";
+import { BrowserRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
 
 const meta: Meta<typeof BarbershopSignup> = {
-  title: 'Pages/BarbershopSignup',
+  title: "Pages/BarbershopSignup",
   component: BarbershopSignup,
   decorators: [
     (Story) => (
@@ -18,10 +18,11 @@ const meta: Meta<typeof BarbershopSignup> = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       description: {
-        component: 'Página de cadastro de barbearia com hierarquia de headings corrigida (H1→H2)',
+        component:
+          "Página de cadastro de barbearia com hierarquia de headings corrigida (H1→H2)",
       },
     },
   },
@@ -34,7 +35,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Formulário multi-step de cadastro de barbearia com estrutura semântica corrigida',
+        story:
+          "Formulário multi-step de cadastro de barbearia com estrutura semântica corrigida",
       },
     },
   },

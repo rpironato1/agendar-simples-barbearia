@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import NotFound from './NotFound';
-import { BrowserRouter } from 'react-router-dom';
+import type { Meta, StoryObj } from "@storybook/react";
+import NotFound from "./NotFound";
+import { BrowserRouter } from "react-router-dom";
 
 const meta: Meta<typeof NotFound> = {
-  title: 'Pages/NotFound',
+  title: "Pages/NotFound",
   component: NotFound,
   decorators: [
     (Story) => (
@@ -13,10 +13,11 @@ const meta: Meta<typeof NotFound> = {
     ),
   ],
   parameters: {
-    layout: 'fullscreen',
+    layout: "fullscreen",
     docs: {
       description: {
-        component: 'Página 404 com contraste WCAG AA e estrutura semântica corrigidos',
+        component:
+          "Página 404 com contraste WCAG AA e estrutura semântica corrigidos",
       },
     },
   },
@@ -29,7 +30,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'Página 404 padrão com melhorias de acessibilidade implementadas',
+        story:
+          "Página 404 padrão com melhorias de acessibilidade implementadas",
       },
     },
   },
