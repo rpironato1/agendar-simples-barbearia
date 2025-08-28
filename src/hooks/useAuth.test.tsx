@@ -79,8 +79,8 @@ describe("useAuth Hook", () => {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
-      insert: vi.fn().mockReturnThis(),
-      upsert: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+      upsert: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
   });
 
@@ -160,7 +160,16 @@ describe("useAuth Hook", () => {
       };
       
       mockDb.auth.signUp.mockResolvedValue(signUpResponse);
-      mockDb.from().insert().mockResolvedValue({ data: mockProfile, error: null });
+      
+      // Setup the from mock chain properly
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        upsert: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+      };
+      mockDb.from.mockReturnValue(mockChain);
       
       const { result } = renderUseAuth();
       
@@ -194,8 +203,16 @@ describe("useAuth Hook", () => {
       };
       
       mockDb.auth.signUp.mockResolvedValue(signUpResponse);
-      mockDb.from().insert().mockResolvedValue({ data: mockProfile, error: null });
-      mockDb.from().upsert().mockResolvedValue({ data: mockBarbershopData, error: null });
+      
+      // Setup the from mock chain properly
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        upsert: vi.fn().mockResolvedValue({ data: mockBarbershopData, error: null }),
+      };
+      mockDb.from.mockReturnValue(mockChain);
       
       const { result } = renderUseAuth();
       
@@ -300,9 +317,15 @@ describe("useAuth Hook", () => {
 
     it("loads barbershop data for barbershop users", async () => {
       const barbershopProfile = { ...mockProfile, role: "barbershop" };
-      mockDb.from().select().eq().single
-        .mockResolvedValueOnce({ data: barbershopProfile, error: null })
-        .mockResolvedValueOnce({ data: mockBarbershopData, error: null });
+      
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn()
+          .mockResolvedValueOnce({ data: barbershopProfile, error: null })
+          .mockResolvedValueOnce({ data: mockBarbershopData, error: null }),
+      };
+      mockDb.from.mockReturnValue(mockChain);
       
       mockDb.auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
       mockDb.auth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null });
@@ -318,10 +341,16 @@ describe("useAuth Hook", () => {
     });
 
     it("handles profile loading errors gracefully", async () => {
-      mockDb.from().select().eq().single.mockResolvedValue({ 
-        data: null, 
-        error: { message: "Profile not found" } 
-      });
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ 
+          data: null, 
+          error: { message: "Profile not found" } 
+        }),
+      };
+      mockDb.from.mockReturnValue(mockChain);
+      
       mockDb.auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
       mockDb.auth.getSession.mockResolvedValue({ data: { session: mockSession }, error: null });
       

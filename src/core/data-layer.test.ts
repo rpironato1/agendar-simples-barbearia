@@ -580,12 +580,13 @@ describe("DataProvider Interface", () => {
         });
       }
       
-      const result = await dataProvider.listBarbershops(1, 10);
+      const result = await dataProvider.listBarbershops(2, 10);
       
       expect(result.success).toBe(true);
-      expect(result.data.length).toBe(10);
+      expect(result.data.length).toBe(5); // Second page should have 5 items (15 total, 10 per page)
       expect(result.pagination!.total).toBe(15);
       expect(result.pagination!.totalPages).toBe(2);
+      expect(result.pagination!.page).toBe(2);
     });
   });
 

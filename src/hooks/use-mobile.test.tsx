@@ -318,45 +318,60 @@ describe("Mobile Detection Hooks", () => {
       mockInnerWidth = 600;
       const { result } = renderHook(() => useScreenSize());
       
-      expect(result.current).toBe("mobile");
+      expect(result.current.width).toBe(600);
+      expect(result.current.isMobile).toBe(true);
+      expect(result.current.isTablet).toBe(false);
+      expect(result.current.isDesktop).toBe(false);
     });
 
     it("should return tablet for tablet screen", () => {
       mockInnerWidth = 800;
       const { result } = renderHook(() => useScreenSize());
       
-      expect(result.current).toBe("tablet");
+      expect(result.current.width).toBe(800);
+      expect(result.current.isMobile).toBe(false);
+      expect(result.current.isTablet).toBe(true);
+      expect(result.current.isDesktop).toBe(false);
     });
 
     it("should return desktop for desktop screen", () => {
       mockInnerWidth = 1200;
       const { result } = renderHook(() => useScreenSize());
       
-      expect(result.current).toBe("desktop");
+      expect(result.current.width).toBe(1200);
+      expect(result.current.isMobile).toBe(false);
+      expect(result.current.isTablet).toBe(false);
+      expect(result.current.isDesktop).toBe(true);
     });
 
-    it("should return wide for wide screen", () => {
+    it("should return wide desktop for wide screen", () => {
       mockInnerWidth = 1400;
       const { result } = renderHook(() => useScreenSize());
       
-      expect(result.current).toBe("wide");
+      expect(result.current.width).toBe(1400);
+      expect(result.current.isMobile).toBe(false);
+      expect(result.current.isTablet).toBe(false);
+      expect(result.current.isDesktop).toBe(true);
     });
 
     it("should handle boundary values correctly", () => {
       // Test exact breakpoint values
       const testCases = [
-        { width: 767, expected: "mobile" },
-        { width: 768, expected: "tablet" },
-        { width: 1023, expected: "tablet" },
-        { width: 1024, expected: "desktop" },
-        { width: 1279, expected: "desktop" },
-        { width: 1280, expected: "wide" },
+        { width: 767, expected: { isMobile: true, isTablet: false, isDesktop: false } },
+        { width: 768, expected: { isMobile: false, isTablet: true, isDesktop: false } },
+        { width: 1023, expected: { isMobile: false, isTablet: true, isDesktop: false } },
+        { width: 1024, expected: { isMobile: false, isTablet: false, isDesktop: true } },
+        { width: 1279, expected: { isMobile: false, isTablet: false, isDesktop: true } },
+        { width: 1280, expected: { isMobile: false, isTablet: false, isDesktop: true } },
       ];
 
       testCases.forEach(({ width, expected }) => {
         mockInnerWidth = width;
         const { result } = renderHook(() => useScreenSize());
-        expect(result.current).toBe(expected);
+        expect(result.current.width).toBe(width);
+        expect(result.current.isMobile).toBe(expected.isMobile);
+        expect(result.current.isTablet).toBe(expected.isTablet);
+        expect(result.current.isDesktop).toBe(expected.isDesktop);
       });
     });
 
@@ -379,7 +394,7 @@ describe("Mobile Detection Hooks", () => {
       mockInnerWidth = 600; // mobile
       const { result, unmount } = renderHook(() => useScreenSize());
       
-      expect(result.current).toBe("mobile");
+      expect(result.current.isMobile).toBe(true);
 
       // Simulate resize to tablet
       act(() => {
@@ -387,7 +402,8 @@ describe("Mobile Detection Hooks", () => {
         resizeHandler();
       });
 
-      expect(result.current).toBe("tablet");
+      expect(result.current.isTablet).toBe(true);
+      expect(result.current.isMobile).toBe(false);
 
       // Simulate resize to desktop
       act(() => {
@@ -395,7 +411,8 @@ describe("Mobile Detection Hooks", () => {
         resizeHandler();
       });
 
-      expect(result.current).toBe("desktop");
+      expect(result.current.isDesktop).toBe(true);
+      expect(result.current.isTablet).toBe(false);
 
       unmount();
       expect(mockRemoveEventListener).toHaveBeenCalledWith("resize", expect.any(Function));
@@ -418,14 +435,14 @@ describe("Mobile Detection Hooks", () => {
       mockInnerWidth = 5000;
       const { result } = renderHook(() => useScreenSize());
       
-      expect(result.current).toBe("wide");
+      expect(result.current.isDesktop).toBe(true);
     });
 
     it("should handle very small screen sizes", () => {
       mockInnerWidth = 200;
       const { result } = renderHook(() => useScreenSize());
       
-      expect(result.current).toBe("mobile");
+      expect(result.current.isMobile).toBe(true);
     });
 
     it("should clean up event listeners on unmount", () => {
@@ -489,7 +506,7 @@ describe("Mobile Detection Hooks", () => {
         resizeHandler();
       });
 
-      expect(result.current).toBe("mobile");
+      expect(result.current.isMobile).toBe(true);
     });
   });
 });
